@@ -1,0 +1,6 @@
+Manifest-Version: 1.0
+Build-Jdk-Spec: 21
+Implementation-Title: MovieReviewSystemAPI
+Implementation-Version: 3.3.0
+Created-By: Maven Integration for Eclipse
+
