@@ -4,101 +4,148 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Movie Review System API</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <style>
+        /* Dark Theme Background */
         body {
+            background-color: #1e2125;
+            color: #e6edf3;
             font-family: Arial, sans-serif;
-            background-color: #f8f9fa;
+            padding: 20px;
         }
+
+        /* Container */
         .container {
             max-width: 900px;
-            background: white;
+            margin: auto;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 28px;
+            font-weight: bold;
+            color: #ff6b6b;
+        }
+
+        /* Project Overview */
+        .card-overview {
+            background-color: rgba(32, 35, 39, 0.8); /* Semi-transparent dark */
             padding: 20px;
             border-radius: 10px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-            margin-top: 20px;
+            border-left: 4px solid #ff6b6b; /* Accent color */
+            margin-bottom: 20px;
         }
-        .github-button {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-top: 20px;
+        .card-overview h4 {
+            color: #ff6b6b;
         }
-        .github-button img {
-            width: 24px;
-            height: 24px;
-            margin-right: 10px;
+
+        /* API Endpoints Table */
+        .table {
+            background-color: #2b2f36;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+        }
+        .table th {
+            background-color: #ff6b6b;
+            color: #ffffff;
+        }
+        .table-hover tbody tr:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* GitHub Button */
+        .github-btn {
+            display: block;
+            width: fit-content;
+            margin: 20px auto;
+            background: linear-gradient(135deg, #6e5494, #8b6ecf);
+            color: #fff;
+            padding: 10px 20px;
+            font-weight: bold;
+            text-decoration: none;
+            border-radius: 8px;
+            text-align: center;
+            transition: transform 0.2s ease-in-out;
+        }
+        .github-btn:hover {
+            transform: scale(1.05);
+            background: linear-gradient(135deg, #8b6ecf, #a988ff);
+        }
+
+        /* Contact Section */
+        .contact a {
+            color: #58a6ff;
+            font-weight: bold;
+            text-decoration: none;
+        }
+        .contact a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
+
     <div class="container">
-        <h1 class="text-center">🎬 Movie Review System API</h1>
-        <p class="lead">A RESTful web service built with Spring Boot, JPA, and MySQL, enabling users to manage movies and reviews.</p>
-        
-        <h3>🚀 Tech Stack</h3>
-        <ul>
-            <li>Java 17</li>
-            <li>Spring Boot 3.4.2</li>
-            <li>Spring Data JPA</li>
-            <li>MySQL</li>
-            <li>Spring Security</li>
-            <li>Swagger OpenAPI</li>
-            <li>Lombok</li>
-        </ul>
+        <!-- Header -->
+        <div class="header">
+            <h1>🎬 Movie Review System API</h1>
+        </div>
 
-        <h3>🐜 API Documentation</h3>
-        <p>Access <strong>Swagger UI</strong> after running the application:</p>
-        <code>http://localhost:8080/swagger-ui/index.html</code>
+        <!-- Project Overview -->
+        <div class="card card-overview">
+            <h4>📌 Project Overview</h4>
+            <p>The <strong>Movie Review System API</strong> allows users to manage movies and reviews. Built using <strong>Spring Boot, JPA, and MySQL</strong>, it provides CRUD operations on movies and reviews with authentication.</p>
+        </div>
 
-        <h3>🔧 Setup & Installation</h3>
-        <p>Clone the repository:</p>
-        <pre><code>git clone https://github.com/lakshay1341/MovieReviewSystemAPI.git
-cd MovieReviewSystemAPI</code></pre>
-
-        <h3>🔥 API Endpoints</h3>
-        <table class="table table-bordered">
+        <!-- API Endpoints Table -->
+        <h4>📡 API Endpoints</h4>
+        <table class="table table-hover">
             <thead>
                 <tr>
                     <th>Method</th>
                     <th>Endpoint</th>
                     <th>Description</th>
-                    <th>Auth Required</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td>GET</td>
+                    <td><span class="badge bg-success">GET</span></td>
                     <td>/movies</td>
                     <td>Fetch all movies</td>
-                    <td>Yes</td>
                 </tr>
                 <tr>
-                    <td>POST</td>
+                    <td><span class="badge bg-primary">POST</span></td>
                     <td>/movies</td>
                     <td>Add a new movie</td>
-                    <td>Yes</td>
                 </tr>
                 <tr>
-                    <td>POST</td>
-                    <td>/reviews/movies/{movieId}</td>
-                    <td>Add a new review for a movie</td>
-                    <td>Yes</td>
+                    <td><span class="badge bg-warning text-dark">PUT</span></td>
+                    <td>/movies/{id}</td>
+                    <td>Update movie details</td>
                 </tr>
                 <tr>
-                    <td>PUT</td>
-                    <td>/reviews/{reviewId}</td>
-                    <td>Update an existing review</td>
-                    <td>Yes</td>
+                    <td><span class="badge bg-danger">DELETE</span></td>
+                    <td>/movies/{id}</td>
+                    <td>Delete a movie</td>
                 </tr>
             </tbody>
         </table>
 
-        <div class="github-button">
-            <a href="https://github.com/lakshay1341/MovieReviewSystemAPI" target="_blank" class="btn btn-dark">
-                <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub Logo"> Visit GitHub Repo
-            </a>
+        <!-- GitHub Repository Link -->
+        <a href="https://github.com/lakshay1341/Movie-Review-System-API" class="github-btn" target="_blank">
+            🌟 View on GitHub
+        </a>
+
+        <!-- Contact Information -->
+        <div class="contact text-center">
+            <p>📧 Contact: <a href="mailto:your-email@example.com">your-email@example.com</a></p>
         </div>
     </div>
+
 </body>
 </html>
