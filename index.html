@@ -6,146 +6,45 @@
     <title>Movie Review System API</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <style>
-        /* Dark Theme Background */
         body {
-            background-color: #1e2125;
-            color: #e6edf3;
-            font-family: Arial, sans-serif;
-            padding: 20px;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Arial', sans-serif;
         }
-
-        /* Container */
-        .container {
-            max-width: 900px;
-            margin: auto;
-        }
-
-        /* Header */
-        .header {
+        .card {
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
             text-align: center;
-            margin-bottom: 30px;
+            background: #ffffff;
+            transition: transform 0.3s ease-in-out;
         }
-        .header h1 {
-            font-size: 28px;
-            font-weight: bold;
-            color: #ff6b6b;
+        .card:hover {
+            transform: translateY(-5px);
         }
-
-        /* Project Overview */
-        .card-overview {
-            background-color: rgba(32, 35, 39, 0.8); /* Semi-transparent dark */
-            padding: 20px;
-            border-radius: 10px;
-            border-left: 4px solid #ff6b6b; /* Accent color */
+        .github-logo {
+            width: 90px;
             margin-bottom: 20px;
         }
-        .card-overview h4 {
-            color: #ff6b6b;
-        }
-
-        /* API Endpoints Table */
-        .table {
-            background-color: #2b2f36;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
-        }
-        .table th {
-            background-color: #ff6b6b;
-            color: #ffffff;
-        }
-        .table-hover tbody tr:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-
-        /* GitHub Button */
-        .github-btn {
-            display: block;
-            width: fit-content;
-            margin: 20px auto;
-            background: linear-gradient(135deg, #6e5494, #8b6ecf);
-            color: #fff;
-            padding: 10px 20px;
-            font-weight: bold;
+        .github-link {
+            font-size: 22px;
+            font-weight: 600;
+            color: #212529;
             text-decoration: none;
-            border-radius: 8px;
-            text-align: center;
-            transition: transform 0.2s ease-in-out;
+            transition: color 0.3s ease-in-out;
         }
-        .github-btn:hover {
-            transform: scale(1.05);
-            background: linear-gradient(135deg, #8b6ecf, #a988ff);
-        }
-
-        /* Contact Section */
-        .contact a {
-            color: #58a6ff;
-            font-weight: bold;
-            text-decoration: none;
-        }
-        .contact a:hover {
-            text-decoration: underline;
+        .github-link:hover {
+            color: #0056b3;
         }
     </style>
 </head>
 <body>
-
-    <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <h1>🎬 Movie Review System API</h1>
-        </div>
-
-        <!-- Project Overview -->
-        <div class="card card-overview">
-            <h4>📌 Project Overview</h4>
-            <p>The <strong>Movie Review System API</strong> allows users to manage movies and reviews. Built using <strong>Spring Boot, JPA, and MySQL</strong>, it provides CRUD operations on movies and reviews with authentication.</p>
-        </div>
-
-        <!-- API Endpoints Table -->
-        <h4>📡 API Endpoints</h4>
-        <table class="table table-hover">
-            <thead>
-                <tr>
-                    <th>Method</th>
-                    <th>Endpoint</th>
-                    <th>Description</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td><span class="badge bg-success">GET</span></td>
-                    <td>/movies</td>
-                    <td>Fetch all movies</td>
-                </tr>
-                <tr>
-                    <td><span class="badge bg-primary">POST</span></td>
-                    <td>/movies</td>
-                    <td>Add a new movie</td>
-                </tr>
-                <tr>
-                    <td><span class="badge bg-warning text-dark">PUT</span></td>
-                    <td>/movies/{id}</td>
-                    <td>Update movie details</td>
-                </tr>
-                <tr>
-                    <td><span class="badge bg-danger">DELETE</span></td>
-                    <td>/movies/{id}</td>
-                    <td>Delete a movie</td>
-                </tr>
-            </tbody>
-        </table>
-
-        <!-- GitHub Repository Link -->
-        <a href="https://github.com/lakshay1341/Movie-Review-System-API" class="github-btn" target="_blank">
-            🌟 View on GitHub
-        </a>
-
-        <!-- Contact Information -->
-        <div class="contact text-center">
-            <p>📧 Contact: <a href="mailto:your-email@example.com">your-email@example.com</a></p>
-        </div>
+    <div class="card">
+        <img class="github-logo" src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub Logo">
+        <p><a class="github-link" href="https://github.com/lakshay1341/Movie-Review-System-API" target="_blank">View Project on GitHub</a></p>
     </div>
-
 </body>
 </html>
