@@ -7,97 +7,97 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
     <style>
         body {
-            background-color: #0d1117;
-            color: #c9d1d9;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        .navbar {
-            background-color: #161b22;
-            padding: 15px;
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
         }
         .container {
             max-width: 900px;
-            margin-top: 30px;
-        }
-        .card {
-            background-color: #161b22;
-            border: 1px solid #30363d;
+            background: white;
             padding: 20px;
             border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
         }
-        .table {
-            color: #c9d1d9;
+        .github-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 20px;
         }
-        .table th, .table td {
-            border: 1px solid #30363d;
-        }
-        .github-btn {
-            background-color: #21262d;
-            border: 1px solid #30363d;
-            color: #c9d1d9;
-            padding: 8px 16px;
-            border-radius: 6px;
-            text-decoration: none;
-            font-weight: bold;
-        }
-        .github-btn:hover {
-            background-color: #30363d;
+        .github-button img {
+            width: 24px;
+            height: 24px;
+            margin-right: 10px;
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-dark">
-        <div class="container d-flex justify-content-between">
-            <h3 class="m-0 text-white">Movie Review System API</h3>
-            <a href="https://github.com/lakshay1341" class="github-btn">GitHub</a>
-        </div>
-    </nav>
-
     <div class="container">
-        <div class="card">
-            <h4>📌 Project Overview</h4>
-            <p>The <strong>Movie Review System API</strong> allows users to manage movies and reviews. Built using <strong>Spring Boot, JPA, and MySQL</strong>, it provides CRUD operations on movies and reviews with authentication.</p>
-        </div>
+        <h1 class="text-center">🎬 Movie Review System API</h1>
+        <p class="lead">A RESTful web service built with Spring Boot, JPA, and MySQL, enabling users to manage movies and reviews.</p>
+        
+        <h3>🚀 Tech Stack</h3>
+        <ul>
+            <li>Java 17</li>
+            <li>Spring Boot 3.4.2</li>
+            <li>Spring Data JPA</li>
+            <li>MySQL</li>
+            <li>Spring Security</li>
+            <li>Swagger OpenAPI</li>
+            <li>Lombok</li>
+        </ul>
 
-        <div class="card mt-3">
-            <h4>🔥 API Endpoints</h4>
-            <table class="table table-dark table-striped mt-3">
-                <thead>
-                    <tr>
-                        <th>Method</th>
-                        <th>Endpoint</th>
-                        <th>Description</th>
-                        <th>Authentication Required</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>GET</td>
-                        <td>/movies</td>
-                        <td>Fetch all movies</td>
-                        <td>Yes</td>
-                    </tr>
-                    <tr>
-                        <td>POST</td>
-                        <td>/movies</td>
-                        <td>Add a new movie</td>
-                        <td>Yes</td>
-                    </tr>
-                    <tr>
-                        <td>POST</td>
-                        <td>/reviews/movies/{movieId}</td>
-                        <td>Add a review for a movie</td>
-                        <td>Yes</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+        <h3>🐜 API Documentation</h3>
+        <p>Access <strong>Swagger UI</strong> after running the application:</p>
+        <code>http://localhost:8080/swagger-ui/index.html</code>
 
-        <div class="card mt-3">
-            <h4>📞 Contact</h4>
-            <p><strong>Lakshay Chaudhary</strong></p>
-            <p>Email: <a href="mailto:lakshaychaudhary2003@gmail.com" class="text-decoration-none text-white">lakshaychaudhary2003@gmail.com</a></p>
-            <p>GitHub: <a href="https://github.com/lakshay1341" class="text-decoration-none text-white">lakshay1341</a></p>
+        <h3>🔧 Setup & Installation</h3>
+        <p>Clone the repository:</p>
+        <pre><code>git clone https://github.com/lakshay1341/MovieReviewSystemAPI.git
+cd MovieReviewSystemAPI</code></pre>
+
+        <h3>🔥 API Endpoints</h3>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Method</th>
+                    <th>Endpoint</th>
+                    <th>Description</th>
+                    <th>Auth Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>GET</td>
+                    <td>/movies</td>
+                    <td>Fetch all movies</td>
+                    <td>Yes</td>
+                </tr>
+                <tr>
+                    <td>POST</td>
+                    <td>/movies</td>
+                    <td>Add a new movie</td>
+                    <td>Yes</td>
+                </tr>
+                <tr>
+                    <td>POST</td>
+                    <td>/reviews/movies/{movieId}</td>
+                    <td>Add a new review for a movie</td>
+                    <td>Yes</td>
+                </tr>
+                <tr>
+                    <td>PUT</td>
+                    <td>/reviews/{reviewId}</td>
+                    <td>Update an existing review</td>
+                    <td>Yes</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="github-button">
+            <a href="https://github.com/lakshay1341/MovieReviewSystemAPI" target="_blank" class="btn btn-dark">
+                <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub Logo"> Visit GitHub Repo
+            </a>
         </div>
     </div>
 </body>
