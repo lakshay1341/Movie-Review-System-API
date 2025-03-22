@@ -81,10 +81,10 @@ http://localhost:8080/swagger-ui/index.html
 
 #### Swagger Screenshots
 *Swagger UI Overview*
-![Swagger UI Overview](https://github.com/lakshay1341/Movie-Review-System-API/blob/update/jwt-implementation/updated_jwt_impl_images/swagger_overview.png)
+![Swagger UI Overview](https://github.com/lakshay1341/Movie-Review-System-API/blob/main/updated_jwt_impl_images/swagger_overview.png)
 
 *Swagger Endpoint Post*
-![Swagger Endpoint Example](https://github.com/lakshay1341/Movie-Review-System-API/blob/update/jwt-implementation/updated_jwt_impl_images/swagger_post_movie.png)
+![Swagger Endpoint Example](https://github.com/lakshay1341/Movie-Review-System-API/blob/main/updated_jwt_impl_images/swagger_post_movie.png)
 
 ---
 
@@ -140,10 +140,10 @@ You can test the API using Postman. Import the collection and environment files 
 
 #### Postman Screenshots
 *Postman Login Request*
-![Postman Login Request](https://github.com/lakshay1341/Movie-Review-System-API/blob/update/jwt-implementation/updated_jwt_impl_images/postman_login.png)
+![Postman Login Request](https://github.com/lakshay1341/Movie-Review-System-API/blob/main/updated_jwt_impl_images/postman_login.png)
 
 *Postman Movies Request*
-![Postman Movies Request](https://github.com/lakshay1341/Movie-Review-System-API/blob/update/jwt-implementation/updated_jwt_impl_images/postman_get_movies.png)
+![Postman Movies Request](https://github.com/lakshay1341/Movie-Review-System-API/blob/main/updated_jwt_impl_images/postman_get_movies.png)
 
 ---
 
