@@ -9,7 +9,7 @@ VALUES (
     '$2a$12$OClVWq0Kanqu/zdgF.UtnORDOPPVX3N3PtzdkRlpnmQ0ShQXd1TI.',
     (SELECT id FROM roles WHERE name = 'ROLE_ADMIN')
 );
--- admin123
+-- password: admin123
 
 -- Reset auto-increment after initial data
 ALTER TABLE users AUTO_INCREMENT = 2;

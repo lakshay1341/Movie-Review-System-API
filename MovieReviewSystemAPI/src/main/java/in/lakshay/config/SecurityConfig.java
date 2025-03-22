@@ -1,6 +1,7 @@
 package in.lakshay.config;
 
 import jakarta.servlet.http.HttpServletResponse;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -55,8 +56,7 @@ public class SecurityConfig {
 								"/login",
 								"/register",
 								"/swagger-ui/**",
-								"/api-docs/**",
-								"/health"
+								"/api-docs/**"
 						).permitAll()
 						.anyRequest().authenticated()
 				)
@@ -67,17 +67,9 @@ public class SecurityConfig {
 
 		return http.build();
 	}
-/*@Bean
-SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-	http
-			.csrf(csrf -> csrf.disable())
-			.authorizeHttpRequests(auth -> auth
-					.anyRequest().permitAll() // Temporary change
-			)
-			.sessionManagement(session -> session
-					.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-			)
-			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-	return http.build();
-}*/
+
+	@Bean
+	public ModelMapper modelMapper() {
+		return new ModelMapper();
+	}
 }
