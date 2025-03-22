@@ -55,8 +55,8 @@ public class SecurityConfig {
 								"/login",
 								"/register",
 								"/swagger-ui/**",
-								"/v3/api-docs/**",
-								"/health"  // Add this
+								"/api-docs/**",
+								"/health"
 						).permitAll()
 						.anyRequest().authenticated()
 				)
@@ -67,4 +67,17 @@ public class SecurityConfig {
 
 		return http.build();
 	}
+/*@Bean
+SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+	http
+			.csrf(csrf -> csrf.disable())
+			.authorizeHttpRequests(auth -> auth
+					.anyRequest().permitAll() // Temporary change
+			)
+			.sessionManagement(session -> session
+					.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+			)
+			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+	return http.build();
+}*/
 }
