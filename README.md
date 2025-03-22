@@ -1,7 +1,7 @@
 # Movie Review System API
 
 ## 📌 Project Overview
-The **Movie Review System API** is a RESTful web service that allows users to manage movies and reviews. Built using **Spring Boot, JPA, and MySQL**, this API enables users to perform CRUD operations on movies and their corresponding reviews. The system includes **Spring Security** for basic authentication, **Swagger OpenAPI** for API documentation, and **Lombok** for reducing boilerplate code.
+The **Movie Review System API** is a RESTful web service designed to manage movies and reviews. Built with **Spring Boot, JPA, and MySQL**, it enables CRUD operations on movies and reviews. The system now uses **JWT Authentication** for secure access, **Swagger OpenAPI** for API documentation, and **Lombok** to minimize boilerplate code.
 
 ---
 
@@ -11,10 +11,10 @@ The **Movie Review System API** is a RESTful web service that allows users to ma
 - **Spring Data JPA**
 - **MySQL**
 - **Spring Security**
+- **JJWT (JSON Web Tokens)**
 - **Swagger OpenAPI**
 - **Lombok**
 
----
 
 ## 🐂 Project Structure
 ```
@@ -37,14 +37,6 @@ MovieReviewSystemAPI
 
 ---
 
-## 🐜 API Documentation (Swagger UI)
-After running the application, you can access the **Swagger UI** at:
-```
-http://localhost:8080/swagger-ui/index.html
-```
-
----
-
 ## 🔧 Setup & Installation
 ### 1⃣ Clone the Repository
 ```bash
@@ -60,17 +52,18 @@ spring.datasource.username=root
 spring.datasource.password=root
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.show-sql=true
+jwt.secret=your_very_secure_secret_key_here
+jwt.expiration=3600000
 ```
 
-### 3⃣ Add Users to the Database
-To authenticate with the API, you need to add users to the database. Passwords must be encoded using **BCrypt (strength 12)**. You can use the following SQL query to insert a user (replace `username` and `password` with your values):
-
-```sql
-INSERT INTO users (username, password) VALUES ('your_username', 'bcrypt_encoded_password');
-```
+### 3⃣ Initial Admin User
+An initial admin user is created automatically via `data.sql`:
+- **Username**: `admin`
+- **Password**: `admin123` (BCrypt encoded)
+Use these credentials to log in and perform administrative actions.
 
 ### 4⃣ Build and Run the Application
-Use Maven to clean, build, and start the application:
+Use Maven to build and start the application:
 ```bash
 mvn clean install
 mvn spring-boot:run
@@ -78,28 +71,84 @@ mvn spring-boot:run
 
 ---
 
+## 🐜 API Documentation
+
+### Swagger UI
+After running the application, access the **Swagger UI** at:
+```
+http://localhost:8080/swagger-ui/index.html
+```
+
+#### Swagger Screenshots
+*Swagger UI Overview*
+![Swagger UI Overview](https://github.com/lakshay1341/Movie-Review-System-API/blob/update/jwt-implementation/updated_jwt_impl_images/swagger_overview.png)
+
+*Swagger Endpoint Post*
+![Swagger Endpoint Example](https://github.com/lakshay1341/Movie-Review-System-API/blob/update/jwt-implementation/updated_jwt_impl_images/swagger_post_movie.png)
+
+---
+
 ## 🔥 API Endpoints
+
+### 🔑 Authentication Endpoints
+| Method | Endpoint     | Description               | Authentication Required | Roles         |
+|--------|--------------|---------------------------|-------------------------|---------------|
+| POST   | `/register`  | Register a new user       | No                      | None          |
+| POST   | `/login`     | Login and get JWT token   | No                      | None          |
+
 ### 🎬 Movie Endpoints
-| Method | Endpoint          | Description                     | Authentication Required |
-|--------|-------------------|---------------------------------|-------------------------|
-| GET    | `/movies`         | Fetch all movies               | Yes                     |
-| POST   | `/movies`         | Add a new movie                | Yes                     |
+| Method | Endpoint          | Description                     | Authentication Required | Roles         |
+|--------|-------------------|---------------------------------|-------------------------|---------------|
+| GET    | `/movies`         | Fetch all movies (paginated)   | Yes                     | Any           |
+| POST   | `/movies`         | Add a new movie                | Yes                     | ROLE_ADMIN    |
+
+*Note*: GET `/movies` supports pagination and search. Example: `/movies?page=0&size=10&sort=releaseYear,desc&search=action`.
 
 ### ⭐ Review Endpoints
-| Method | Endpoint                          | Description                     | Authentication Required |
-|--------|-----------------------------------|---------------------------------|-------------------------|
-| POST   | `/reviews/movies/{movieId}`       | Add a new review for a movie   | Yes                     |
-| PUT    | `/reviews/{reviewId}`             | Update an existing review      | Yes                     |
+| Method | Endpoint                          | Description                     | Authentication Required | Roles                     |
+|--------|-----------------------------------|---------------------------------|-------------------------|---------------------------|
+| POST   | `/reviews/movies/{movieId}`       | Add a review for a movie       | Yes                     | ROLE_USER, ROLE_ADMIN     |
+| PUT    | `/reviews/{reviewId}`             | Update an existing review      | Yes                     | Review Owner, ROLE_ADMIN  |
+| GET    | `/reviews/my-reviews`             | Fetch user's own reviews       | Yes                     | ROLE_USER, ROLE_ADMIN     |
 
 ---
 
 ## 🔐 Security
-The API is secured with **Basic Authentication**. Ensure you provide valid credentials when making requests. Passwords for users must be encoded using **BCrypt (strength 12)** as configured in the `SecurityConfig.java` file.
+The API is secured with **JWT Authentication**. To access protected endpoints:
+1. Register via `/register` or use the initial admin credentials.
+2. Login via `/login` to obtain a JWT token.
+3. Include the token in the `Authorization` header as `Bearer <token>` for subsequent requests.
+
+Passwords are encoded using **BCrypt (strength 12)** as configured in `SecurityConfig.java`.
+
+---
+
+## 📋 Response Format
+All API responses follow this structure:
+```json
+{
+  "success": true/false,
+  "message": "description or error code",
+  "data": {response data}
+}
+```
+
+---
+
+## 🛠️ Testing with Postman
+You can test the API using Postman. Import the collection and environment files (if provided) or manually configure requests with the JWT token.
+
+#### Postman Screenshots
+*Postman Login Request*
+![Postman Login Request](https://github.com/lakshay1341/Movie-Review-System-API/blob/update/jwt-implementation/updated_jwt_impl_images/postman_login.png)
+
+*Postman Movies Request*
+![Postman Movies Request](https://github.com/lakshay1341/Movie-Review-System-API/blob/update/jwt-implementation/updated_jwt_impl_images/postman_get_movies.png)
 
 ---
 
 ## 🤝 Contributing
-If you want to contribute to this project, follow these steps:
+To contribute:
 1. Fork the repository.
 2. Create a new branch (`git checkout -b feature-branch`).
 3. Commit your changes (`git commit -m 'Add new feature'`).
@@ -109,10 +158,9 @@ If you want to contribute to this project, follow these steps:
 ---
 
 ## 🛠️ Future Enhancements
-- Add **JWT-based authentication** for enhanced security.
-- Implement **pagination** for large datasets.
-- Introduce **rating system** with an aggregate score for movies.
+- Introduce a **rating system** with aggregate scores for movies.
 - Add **unit and integration tests** for better code coverage.
+- Implement **caching** to improve performance.
 
 ---
 
@@ -124,4 +172,3 @@ If you want to contribute to this project, follow these steps:
 ---
 
 💡 *Star this repository if you found it helpful!* ⭐
-
