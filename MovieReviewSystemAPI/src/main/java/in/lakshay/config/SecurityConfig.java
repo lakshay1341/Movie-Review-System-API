@@ -50,25 +50,21 @@ public class SecurityConfig {
 	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http
 				.csrf(csrf -> csrf.disable())
-				.authorizeHttpRequests(request -> request
+				.authorizeHttpRequests(auth -> auth
 						.requestMatchers(
 								"/login",
 								"/register",
 								"/swagger-ui/**",
 								"/v3/api-docs/**",
-								"/swagger-resources/**"
+								"/health"  // Add this
 						).permitAll()
 						.anyRequest().authenticated()
-				)
-				.exceptionHandling(ex -> ex
-						.authenticationEntryPoint((request, response, authException) -> {
-							response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
-						})
 				)
 				.sessionManagement(session -> session
 						.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
 				)
 				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
 		return http.build();
 	}
 }
