@@ -136,7 +136,7 @@ All API responses follow this structure:
 ---
 
 ## 🛠️ Testing with Postman
-You can test the API using Postman. Import the collection and environment files (if provided) or manually configure requests with the JWT token.
+You can test the API using Postman or Swagger UI.
 
 #### Postman Screenshots
 *Postman Login Request*
