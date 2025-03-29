@@ -57,7 +57,7 @@ jobs:
 
       - name: Upload Test Results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4  # Updated from v3 to v4
         with:
           name: test-results
           path: MovieReviewSystemAPI/target/surefire-reports/
