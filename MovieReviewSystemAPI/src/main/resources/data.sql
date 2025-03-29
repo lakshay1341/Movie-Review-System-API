@@ -1,15 +1,11 @@
--- First insert roles
-INSERT INTO roles (name) VALUES ('ROLE_ADMIN');
-INSERT INTO roles (name) VALUES ('ROLE_USER');
+-- If roles table is empty, insert default roles
+INSERT INTO roles (name) SELECT 'ROLE_USER' WHERE NOT EXISTS (SELECT 1 FROM roles WHERE name = 'ROLE_USER');
+INSERT INTO roles (name) SELECT 'ROLE_ADMIN' WHERE NOT EXISTS (SELECT 1 FROM roles WHERE name = 'ROLE_ADMIN');
 
--- Then users (with proper role_id reference)
-INSERT INTO users (user_name, password, role_id)
-VALUES (
-    'admin',
-    '$2a$12$OClVWq0Kanqu/zdgF.UtnORDOPPVX3N3PtzdkRlpnmQ0ShQXd1TI.',
-    (SELECT id FROM roles WHERE name = 'ROLE_ADMIN')
-);
--- password: admin123
+-- If admin user doesn't exist, create it
+INSERT INTO users (user_name, password, role_id) 
+SELECT 'admin', '$2a$12$ZFqD8mVpocAMPR.Tgrwkee2ChoY8wEpVCCKjOtRo1tX7KggSYb5Iq',
+(SELECT id FROM roles WHERE name = 'ROLE_ADMIN')
+WHERE NOT EXISTS (SELECT 1 FROM users WHERE user_name = 'admin');
 
--- Reset auto-increment after initial data
-ALTER TABLE users AUTO_INCREMENT = 2;
+-- username = admin, password = password

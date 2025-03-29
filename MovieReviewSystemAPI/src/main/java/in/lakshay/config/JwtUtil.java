@@ -2,8 +2,8 @@ package in.lakshay.config;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import in.lakshay.entity.User;
@@ -13,6 +13,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Base64;
 
 @Component
 public class JwtUtil {
@@ -22,26 +23,35 @@ public class JwtUtil {
     @Value("${jwt.expiration}")
     private Long expiration;
 
-    private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes());
+    private SecretKey key;
+
+    @PostConstruct
+    public void init() {
+        // Initialize the key once and reuse it
+        byte[] keyBytes = Base64.getDecoder().decode(secret);
+        key = Keys.hmacShaKeyFor(keyBytes);
     }
 
     public String generateToken(User user) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", user.getId());
-        claims.put("roles", List.of(user.getRole().getName()));
+        String roleName = user.getRole().getName();
+        // Ensure role has ROLE_ prefix
+        String roleWithPrefix = roleName.startsWith("ROLE_") ? roleName : "ROLE_" + roleName;
+        claims.put("roles", List.of(roleWithPrefix));
+        
         return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(user.getUserName())
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(getSigningKey())
+                .claims(claims)
+                .subject(user.getUserName())
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(key, Jwts.SIG.HS512)
                 .compact();
     }
 
     public Claims getClaimsFromToken(String token) {
         return Jwts.parser()
-                .verifyWith(getSigningKey())
+                .verifyWith(key)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
