@@ -1,168 +1,139 @@
 # Movie Review System API
 
 ## 📌 Project Overview
-The **Movie Review System API** is a RESTful web service designed to manage movies and reviews. Built with **Spring Boot, JPA, and MySQL**, it enables CRUD operations on movies and reviews. The system now uses **JWT Authentication** for secure access, **Swagger OpenAPI** for API documentation, and **Lombok** to minimize boilerplate code.
+The **Movie Review System API** is a RESTful web service designed to manage movies and reviews. Built with **Spring Boot, JPA, and MySQL**, it enables CRUD operations on movies and reviews. The system features **JWT Authentication**, **Rate Limiting**, **Internationalization**, **Swagger OpenAPI** documentation, and uses **Lombok** to minimize boilerplate code.
 
 ---
 
 ## 🚀 Tech Stack
 - **Java 17**
-- **Spring Boot 3.4.2**
+- **Spring Boot 3.2.3**
 - **Spring Data JPA**
 - **MySQL**
 - **Spring Security**
-- **JJWT (JSON Web Tokens)**
+- **JJWT 0.12.6**
 - **Swagger OpenAPI**
 - **Lombok**
-
+- **Resilience4j** (Rate Limiting)
+- **MessageSource** (Internationalization)
 
 ## 🐂 Project Structure
 ```
 MovieReviewSystemAPI
 │── src/main/java/in/lakshay
-│   ├── config/       # Configuration files (Security, Swagger, etc.)
-│   ├── controller/   # Controllers handling API requests
-│   ├── entity/       # JPA Entities (Movie, Review, User)
-│   ├── repo/         # Data access layer (Repositories)
-│   ├── service/      # Business logic layer (Services)
+│   ├── config/       # Configuration files (Security, Swagger, JWT)
+│   ├── controller/   # REST Controllers with rate limiting
+│   ├── entity/       # JPA Entities
+│   ├── repo/         # Data access layer
+│   ├── service/      # Business logic layer
+│   ├── util/         # Constants and utility classes
+│   └── exception/    # Global exception handling
 │── src/main/resources
-│   └── application.properties  # Application configuration
-│── pom.xml  # Maven dependencies
-│── README.md  # Project documentation
-│── HELP.md  # Getting started guide
-│── LICENSE  # MIT License
-│── mvnw  # Maven wrapper script
-│── mvnw.cmd  # Maven wrapper script for Windows
+│   ├── application.properties  # Application configuration
+│   └── messages.properties     # i18n messages
 ```
 
----
-
 ## 🔧 Setup & Installation
+
 ### 1⃣ Clone the Repository
 ```bash
 git clone https://github.com/lakshay1341/MovieReviewSystemAPI.git
 cd MovieReviewSystemAPI
 ```
 
-### 2⃣ Configure Database
-Update **`src/main/resources/application.properties`** with your MySQL database credentials:
+### 2⃣ Configure Database and Security
+Update **`src/main/resources/application.properties`**:
 ```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/moviereviewdb
+spring.datasource.url=jdbc:mysql://localhost:3306/moviereviewdbupdated
 spring.datasource.username=root
 spring.datasource.password=root
-spring.jpa.hibernate.ddl-auto=update
+spring.jpa.hibernate.ddl-auto=create
 spring.jpa.show-sql=true
-jwt.secret=your_very_secure_secret_key_here
+
+# JWT Configuration
+# Generate your own secure secret key using:
+# openssl rand -base64 64
+jwt.secret=<your-generated-secret>
 jwt.expiration=3600000
+
+# Rate Limiting Configuration
+resilience4j.ratelimiter.instances.basic.limitForPeriod=100
+resilience4j.ratelimiter.instances.basic.limitRefreshPeriod=1m
+resilience4j.ratelimiter.instances.basic.timeoutDuration=1s
 ```
 
-### 3⃣ Initial Admin User
-An initial admin user is created automatically via `data.sql`:
-- **Username**: `admin`
-- **Password**: `admin123` (BCrypt encoded)
-Use these credentials to log in and perform administrative actions.
+⚠️ **Important Security Note**: 
+- Never use default or example secrets in production
+- Always generate a new secure secret using `openssl rand -base64 64`
+- Keep your generated secret private and never commit it to version control
 
-### 4⃣ Build and Run the Application
-Use Maven to build and start the application:
+### 3⃣ Initial Admin User
+Default admin credentials (automatically created):
+- **Username**: `admin`
+- **Password**: `admin123` (BCrypt encoded, strength 12)
+
+### 4⃣ Build and Run
 ```bash
 mvn clean install
 mvn spring-boot:run
 ```
 
----
-
-## 🐜 API Documentation
-
-### Swagger UI
-After running the application, access the **Swagger UI** at:
-```
-http://localhost:8080/swagger-ui/index.html
-```
-
-#### Swagger Screenshots
-*Swagger UI Overview*
-![Swagger UI Overview](https://github.com/lakshay1341/Movie-Review-System-API/blob/main/updated_jwt_impl_images/swagger_overview.png)
-
-*Swagger Endpoint Post*
-![Swagger Endpoint Example](https://github.com/lakshay1341/Movie-Review-System-API/blob/main/updated_jwt_impl_images/swagger_post_movie.png)
-
----
-
 ## 🔥 API Endpoints
 
-### 🔑 Authentication Endpoints
-| Method | Endpoint     | Description               | Authentication Required | Roles         |
-|--------|--------------|---------------------------|-------------------------|---------------|
-| POST   | `/register`  | Register a new user       | No                      | None          |
-| POST   | `/login`     | Login and get JWT token   | No                      | None          |
+### 🔑 Authentication
+| Method | Endpoint     | Description         | Rate Limited | Roles |
+|--------|-------------|---------------------|--------------|-------|
+| POST   | `/api/v1/auth/register` | Register new user | Yes | None |
+| POST   | `/api/v1/auth/login`    | Get JWT token    | Yes | None |
 
-### 🎬 Movie Endpoints
-| Method | Endpoint          | Description                     | Authentication Required | Roles         |
-|--------|-------------------|---------------------------------|-------------------------|---------------|
-| GET    | `/movies`         | Fetch all movies (paginated)   | Yes                     | Any           |
-| POST   | `/movies`         | Add a new movie                | Yes                     | ROLE_ADMIN    |
+### 🎬 Movies
+| Method | Endpoint          | Description        | Rate Limited | Roles |
+|--------|------------------|--------------------|--------------|-------|
+| GET    | `/api/v1/movies` | Get movies (paginated) | Yes | None (Public) |
+| POST   | `/api/v1/movies` | Add movie         | Yes | ADMIN |
 
-*Note*: GET `/movies` supports pagination and search. Example: `/movies?page=0&size=10&sort=releaseYear,desc&search=action`.
+### ⭐ Reviews
+| Method | Endpoint                    | Description      | Rate Limited | Roles |
+|--------|----------------------------|------------------|--------------|-------|
+| POST   | `/api/v1/reviews/movies/{movieId}` | Add review | Yes | USER, ADMIN |
+| PUT    | `/api/v1/reviews/{reviewId}`      | Update review | Yes | Owner, ADMIN |
+| GET    | `/api/v1/reviews/my-reviews`      | Get user reviews | Yes | USER, ADMIN |
 
-### ⭐ Review Endpoints
-| Method | Endpoint                          | Description                     | Authentication Required | Roles                     |
-|--------|-----------------------------------|---------------------------------|-------------------------|---------------------------|
-| POST   | `/reviews/movies/{movieId}`       | Add a review for a movie       | Yes                     | ROLE_USER, ROLE_ADMIN     |
-| PUT    | `/reviews/{reviewId}`             | Update an existing review      | Yes                     | Review Owner, ROLE_ADMIN  |
-| GET    | `/reviews/my-reviews`             | Fetch user's own reviews       | Yes                     | ROLE_USER, ROLE_ADMIN     |
-
----
-
-## 🔐 Security
-The API is secured with **JWT Authentication**. To access protected endpoints:
-1. Register via `/register` or use the initial admin credentials.
-2. Login via `/login` to obtain a JWT token.
-3. Include the token in the `Authorization` header as `Bearer <token>` for subsequent requests.
-
-Passwords are encoded using **BCrypt (strength 12)** as configured in `SecurityConfig.java`.
-
----
+## 🔐 Security Features
+- **JWT Authentication** with configurable expiration
+- **BCrypt Password Encoding** (strength 12)
+- **Role-Based Access Control**
+- **Rate Limiting** (100 requests per minute)
+- **Global Exception Handling**
 
 ## 📋 Response Format
-All API responses follow this structure:
 ```json
 {
-  "success": true/false,
-  "message": "description or error code",
-  "data": {response data}
+  "success": boolean,
+  "message": "Internationalized message key",
+  "data": {
+    // Response payload
+  }
 }
 ```
 
----
+## 📚 API Documentation
+Access Swagger UI: `http://localhost:8080/swagger-ui/index.html`
+OpenAPI Spec: `http://localhost:8080/api-docs`
 
-## 🛠️ Testing with Postman
-You can test the API using Postman or Swagger UI.
-
-#### Postman Screenshots
-*Postman Login Request*
-![Postman Login Request](https://github.com/lakshay1341/Movie-Review-System-API/blob/main/updated_jwt_impl_images/postman_login.png)
-
-*Postman Movies Request*
-![Postman Movies Request](https://github.com/lakshay1341/Movie-Review-System-API/blob/main/updated_jwt_impl_images/postman_get_movies.png)
-
----
-
-## 🤝 Contributing
-To contribute:
-1. Fork the repository.
-2. Create a new branch (`git checkout -b feature-branch`).
-3. Commit your changes (`git commit -m 'Add new feature'`).
-4. Push to your branch (`git push origin feature-branch`).
-5. Open a Pull Request.
-
----
+## 🌍 Internationalization
+Messages are externalized in `messages.properties` supporting:
+- User notifications
+- Error messages
+- Validation messages
+- System messages
 
 ## 🛠️ Future Enhancements
-- Introduce a **rating system** with aggregate scores for movies.
-- Add **unit and integration tests** for better code coverage.
-- Implement **caching** to improve performance.
-
----
+- Implement Redis caching
+- Add comprehensive test coverage
+- Add OAuth2 support
+- Implement WebSocket for real-time updates
+- Add metrics monitoring (Prometheus/Grafana)
 
 ## 📞 Contact
 **Lakshay Chaudhary**  
@@ -170,5 +141,4 @@ To contribute:
 💎 GitHub: [lakshay1341](https://github.com/lakshay1341)
 
 ---
-
-💡 *Star this repository if you found it helpful!* ⭐
+⭐ Star this repository if you find it helpful!

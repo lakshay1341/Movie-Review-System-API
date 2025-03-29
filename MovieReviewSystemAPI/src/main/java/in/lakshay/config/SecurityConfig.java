@@ -57,6 +57,7 @@ public class SecurityConfig {
 				.requestMatchers("/api/v1/auth/**").permitAll()
 				.requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/api-docs/**", "/v3/api-docs/**").permitAll()
 				.requestMatchers("/error").permitAll()
+				.requestMatchers("/api/v1/movies/**").permitAll()
 				.anyRequest().authenticated()
 			)
 			.sessionManagement(session -> session
