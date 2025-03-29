@@ -6,6 +6,7 @@ import in.lakshay.entity.Role;
 import in.lakshay.entity.User;
 import in.lakshay.repo.RoleRepository;
 import in.lakshay.repo.UserRepository;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
@@ -19,11 +20,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Locale;
 
 @RestController
+@RequestMapping("/api/v1/auth")
 @Slf4j
 public class AuthController {
     @Autowired
@@ -44,6 +47,7 @@ public class AuthController {
     @Autowired
     private MessageSource messageSource;
 
+    @RateLimiter(name = "basic")
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         try {
@@ -61,12 +65,8 @@ public class AuthController {
                     new LoginResponse(token)
             ));
         } catch (AuthenticationException e) {
-            log.warn("Login failed for user {}", loginRequest.getUsername());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse<>(
-                    false,
-                    "auth.login.failure",
-                    null
-            ));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, "auth.login.failure", null));
         }
     }
 

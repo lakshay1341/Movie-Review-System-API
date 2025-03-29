@@ -13,7 +13,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 public class ReviewService {
     @Autowired
@@ -26,18 +28,40 @@ public class ReviewService {
     private MovieRepository movieRepository;
 
     public ReviewDTO addReview(String username, Long movieId, ReviewRequest reviewRequest) {
-        User user = userRepository.findByUserName(username);
-        if (user == null) {
-            throw new RuntimeException("User not found");
+        log.info("Adding review for movie {} by user {}", movieId, username);
+        try {
+            User user = userRepository.findByUserName(username);
+            if (user == null) {
+                throw new RuntimeException("User not found");
+            }
+
+            Movie movie = movieRepository.findById(movieId)
+                .orElseThrow(() -> new RuntimeException("Movie not found"));
+
+            Review review = new Review();
+            review.setUser(user);
+            review.setMovie(movie);
+            review.setComment(reviewRequest.getComment());
+            review.setRating(reviewRequest.getRating());
+
+            // Verify relationships before saving
+            if (review.getMovie() == null || review.getUser() == null) {
+                log.error("Failed to set movie or user relationship");
+                throw new RuntimeException("Failed to create review: invalid movie or user relationship");
+            }
+
+            Review savedReview = reviewRepository.save(review);
+            log.info("Review successfully added with ID: {}", savedReview.getId());
+            
+            // Refresh the entity to ensure all relationships are loaded
+            savedReview = reviewRepository.findById(savedReview.getId())
+                .orElseThrow(() -> new RuntimeException("Failed to retrieve saved review"));
+            
+            return mapToDTO(savedReview);
+        } catch (Exception e) {
+            log.error("Error adding review: {}", e.getMessage(), e);
+            throw e;
         }
-        Movie movie = movieRepository.findById(movieId).orElseThrow(() -> new RuntimeException("Movie not found"));
-        Review review = new Review();
-        review.setUser(user);
-        review.setMovie(movie);
-        review.setComment(reviewRequest.getComment());
-        review.setRating(reviewRequest.getRating());
-        Review savedReview = reviewRepository.save(review);
-        return mapToDTO(savedReview);
     }
 
     public ReviewDTO updateReview(Long reviewId, String comment, int rating, String username) {
@@ -75,9 +99,18 @@ public class ReviewService {
         dto.setId(review.getId());
         dto.setComment(review.getComment());
         dto.setRating(review.getRating());
-        dto.setMovieId(review.getMovie().getId());
-        dto.setMovieTitle(review.getMovie().getTitle());
-        dto.setUserName(review.getUser().getUserName());
+        
+        // Add null checks for Movie
+        if (review.getMovie() != null) {
+            dto.setMovieId(review.getMovie().getId());
+            dto.setMovieTitle(review.getMovie().getTitle());
+        }
+        
+        // Add null check for User
+        if (review.getUser() != null) {
+            dto.setUserName(review.getUser().getUserName());
+        }
+        
         return dto;
     }
 }
