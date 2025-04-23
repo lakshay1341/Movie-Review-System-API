@@ -171,24 +171,17 @@ The system automatically creates two users on startup:
 
 <div align="center">
   <h3>API Categories</h3>
-  <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 20px 0;">
-    <div style="flex: 1; min-width: 200px;">
-      <h4>🔑 Authentication</h4>
-      <img src="https://img.shields.io/badge/Endpoints-2-4a4e69?style=flat-square" alt="2 Endpoints">
-    </div>
-    <div style="flex: 1; min-width: 200px;">
-      <h4>🎬 Movies</h4>
-      <img src="https://img.shields.io/badge/Endpoints-6-4a4e69?style=flat-square" alt="6 Endpoints">
-    </div>
-    <div style="flex: 1; min-width: 200px;">
-      <h4>⭐ Reviews</h4>
-      <img src="https://img.shields.io/badge/Endpoints-4-4a4e69?style=flat-square" alt="4 Endpoints">
-    </div>
-    <div style="flex: 1; min-width: 200px;">
-      <h4>🏛️ Theaters</h4>
-      <img src="https://img.shields.io/badge/Endpoints-6-4a4e69?style=flat-square" alt="6 Endpoints">
-    </div>
-  </div>
+  <p>
+    <a href="#-authentication"><img src="https://img.shields.io/badge/🔑_Authentication-2_Endpoints-4a4e69?style=flat-square" alt="Authentication: 2 Endpoints"></a>
+    <a href="#-movies"><img src="https://img.shields.io/badge/🎬_Movies-6_Endpoints-4a4e69?style=flat-square" alt="Movies: 6 Endpoints"></a>
+    <a href="#-reviews"><img src="https://img.shields.io/badge/⭐_Reviews-4_Endpoints-4a4e69?style=flat-square" alt="Reviews: 4 Endpoints"></a>
+    <a href="#-theaters"><img src="https://img.shields.io/badge/🏛️_Theaters-6_Endpoints-4a4e69?style=flat-square" alt="Theaters: 6 Endpoints"></a>
+  </p>
+  <p>
+    <a href="#-showtimes"><img src="https://img.shields.io/badge/📅_Showtimes-7_Endpoints-4a4e69?style=flat-square" alt="Showtimes: 7 Endpoints"></a>
+    <a href="#-seats"><img src="https://img.shields.io/badge/💺_Seats-2_Endpoints-4a4e69?style=flat-square" alt="Seats: 2 Endpoints"></a>
+    <a href="#-reservations"><img src="https://img.shields.io/badge/🎟️_Reservations-6_Endpoints-4a4e69?style=flat-square" alt="Reservations: 6 Endpoints"></a>
+  </p>
 </div>
 
 ### 🔑 Authentication
@@ -530,7 +523,7 @@ Authorization: Bearer eyJhbGciOiJIUzUxMiJ9...
 <div align="center">
   <h4>Movie Review & Reservation System API Collection</h4>
   <p>A comprehensive collection for testing all API endpoints with pre-configured requests and environments</p>
-  <a href="https://www.postman.com/me3333-6732/movie-review-reservation-system/collection/27a274x/movie-review-reservation-system?action=share&source=copy-link&creator=40686830">
+  <a href="https://me3333-6732.postman.co/workspace/4f28700f-ee89-485e-a928-767cd44234f9">
     <img src="https://img.shields.io/badge/Postman-Run%20in%20Postman-4a4e69?style=for-the-badge&logo=postman&logoColor=white" alt="Run in Postman">
   </a>
 </div>
@@ -570,7 +563,7 @@ All API responses follow a consistent format:
   "success": true,
   "message": "operation.success.message",
   "data": {
-    // Response payload
+    
   }
 }
 ```
