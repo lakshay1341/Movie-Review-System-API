@@ -530,7 +530,7 @@ Authorization: Bearer eyJhbGciOiJIUzUxMiJ9...
 <div align="center">
   <h4>Movie Review & Reservation System API Collection</h4>
   <p>A comprehensive collection for testing all API endpoints with pre-configured requests and environments</p>
-  <a href="https://www.postman.com/me3333-6732/movie-review-reservation-system/collection/27a274x/movie-review-reservation-system?action=share&source=copy-link&creator=40686830">
+  <a href="https://me3333-6732.postman.co/workspace/4f28700f-ee89-485e-a928-767cd44234f9">
     <img src="https://img.shields.io/badge/Postman-Run%20in%20Postman-4a4e69?style=for-the-badge&logo=postman&logoColor=white" alt="Run in Postman">
   </a>
 </div>
