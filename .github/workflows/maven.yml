@@ -47,25 +47,25 @@ jobs:
           restore-keys: ${{ runner.os }}-m2
 
       - name: Build and Test
-        run: mvn -B verify --file MovieReviewSystemAPI/pom.xml
+        run: mvn -B verify --file pom.xml
 
       - name: SonarCloud Analysis
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=lakshay1341_Movie-Review-System-API --file MovieReviewSystemAPI/pom.xml
+        run: mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=lakshay1341_Movie-Review-System-API --file pom.xml
 
       - name: Upload Test Results
         if: always()
         uses: actions/upload-artifact@v4  # Updated from v3 to v4
         with:
           name: test-results
-          path: MovieReviewSystemAPI/target/surefire-reports/
+          path: target/surefire-reports/
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          file: MovieReviewSystemAPI/target/site/jacoco/jacoco.xml
+          file: target/site/jacoco/jacoco.xml
           flags: unittests
           fail_ci_if_error: true

@@ -2,11 +2,11 @@
 
 # 🎬 Movie Review & Reservation System
 
-[![Java](https://img.shields.io/badge/Java-17-orange.svg)](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.3-brightgreen.svg)](https://spring.io/projects/spring-boot)
-[![MySQL](https://img.shields.io/badge/MySQL-8.0-blue.svg)](https://www.mysql.com/)
-[![JWT](https://img.shields.io/badge/JWT-0.12.6-yellow.svg)](https://github.com/jwtk/jjwt)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Java](https://img.shields.io/badge/Java-17-4a4e69?style=for-the-badge&logo=openjdk&logoColor=white)](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.2.3-4a4e69?style=for-the-badge&logo=spring&logoColor=white)](https://spring.io/projects/spring-boot)
+[![MySQL](https://img.shields.io/badge/MySQL-8.0-4a4e69?style=for-the-badge&logo=mysql&logoColor=white)](https://www.mysql.com/)
+[![JWT](https://img.shields.io/badge/JWT-0.12.6-4a4e69?style=for-the-badge&logo=jsonwebtokens&logoColor=white)](https://github.com/jwtk/jjwt)
+[![License](https://img.shields.io/badge/License-MIT-4a4e69?style=for-the-badge&logo=opensourceinitiative&logoColor=white)](LICENSE)
 
 **A modern, secure, and scalable RESTful API for movie reviews and theater seat reservations**
 
@@ -65,30 +65,13 @@ Built with modern Java and Spring technologies, this API implements industry bes
 ## 🏗️ Architecture
 
 <div align="center">
-  <table>
-    <tr>
-      <td align="center" width="20%">
-        <img src="https://raw.githubusercontent.com/github/explore/80688e429a7d4ef2fca1e82350fe8e3517d3494d/topics/java/java.png" width="48" height="48" alt="Java" />
-        <br>Java 17
-      </td>
-      <td align="center" width="20%">
-        <img src="https://raw.githubusercontent.com/github/explore/80688e429a7d4ef2fca1e82350fe8e3517d3494d/topics/spring-boot/spring-boot.png" width="48" height="48" alt="Spring Boot" />
-        <br>Spring Boot 3
-      </td>
-      <td align="center" width="20%">
-        <img src="https://raw.githubusercontent.com/github/explore/80688e429a7d4ef2fca1e82350fe8e3517d3494d/topics/mysql/mysql.png" width="48" height="48" alt="MySQL" />
-        <br>MySQL 8
-      </td>
-      <td align="center" width="20%">
-        <img src="https://avatars.githubusercontent.com/u/317776?s=200&v=4" width="48" height="48" alt="Spring Security" />
-        <br>Spring Security
-      </td>
-      <td align="center" width="20%">
-        <img src="https://avatars.githubusercontent.com/u/30959722?s=200&v=4" width="48" height="48" alt="OpenAPI" />
-        <br>Swagger OpenAPI
-      </td>
-    </tr>
-  </table>
+
+[![Java](https://img.shields.io/badge/Java-17-4a4e69?style=for-the-badge&logo=openjdk&logoColor=white)](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.2.3-4a4e69?style=for-the-badge&logo=spring&logoColor=white)](https://spring.io/projects/spring-boot)
+[![MySQL](https://img.shields.io/badge/MySQL-8.0-4a4e69?style=for-the-badge&logo=mysql&logoColor=white)](https://www.mysql.com/)
+[![Spring Security](https://img.shields.io/badge/Spring_Security-4a4e69?style=for-the-badge&logo=spring-security&logoColor=white)](https://spring.io/projects/spring-security)
+[![Swagger](https://img.shields.io/badge/Swagger-OpenAPI_3.0-4a4e69?style=for-the-badge&logo=swagger&logoColor=white)](https://swagger.io/)
+
 </div>
 
 ### Technology Stack
@@ -181,90 +164,335 @@ The system automatically creates two users on startup:
 ## 🔥 API Reference
 
 <div align="center">
-  <img src="docs/images/postman-public-collection.png" alt="Public Postman Collection" width="700">
-  <p><strong>Public Postman Collection Available</strong></p>
+  <a href="https://www.postman.com/me3333-6732/movie-review-reservation-system/collection/27a274x/movie-review-reservation-system?action=share&source=copy-link&creator=40686830">
+    <img src="https://img.shields.io/badge/Postman-View%20Complete%20Collection-4a4e69?style=for-the-badge&logo=postman&logoColor=white" alt="View Complete Collection">
+  </a>
 </div>
 
 <div align="center">
-  <table>
-    <tr>
-      <td><img src="docs/images/Movie and Auth controller.png" alt="Movie & Auth APIs" width="400"></td>
-      <td><img src="docs/images/Review Management and Theaters.png" alt="Review & Theater APIs" width="400"></td>
-    </tr>
-    <tr>
-      <td><img src="docs/images/Seats and Showtimes.png" alt="Seat & Showtime APIs" width="400"></td>
-      <td><img src="docs/images/Reservations.png" alt="Reservation APIs" width="400"></td>
-    </tr>
-  </table>
+  <h3>API Categories</h3>
+  <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 20px 0;">
+    <div style="flex: 1; min-width: 200px;">
+      <h4>🔑 Authentication</h4>
+      <img src="https://img.shields.io/badge/Endpoints-2-4a4e69?style=flat-square" alt="2 Endpoints">
+    </div>
+    <div style="flex: 1; min-width: 200px;">
+      <h4>🎬 Movies</h4>
+      <img src="https://img.shields.io/badge/Endpoints-6-4a4e69?style=flat-square" alt="6 Endpoints">
+    </div>
+    <div style="flex: 1; min-width: 200px;">
+      <h4>⭐ Reviews</h4>
+      <img src="https://img.shields.io/badge/Endpoints-4-4a4e69?style=flat-square" alt="4 Endpoints">
+    </div>
+    <div style="flex: 1; min-width: 200px;">
+      <h4>🏛️ Theaters</h4>
+      <img src="https://img.shields.io/badge/Endpoints-6-4a4e69?style=flat-square" alt="6 Endpoints">
+    </div>
+  </div>
 </div>
 
 ### 🔑 Authentication
 
-| Method | Endpoint | Description | Access |
-|--------|----------|-------------|--------|
-| POST | `/api/v1/auth/register` | Register new user | Public |
-| POST | `/api/v1/auth/login` | Get JWT token | Public |
+<table>
+  <thead>
+    <tr>
+      <th>Method</th>
+      <th>Endpoint</th>
+      <th>Description</th>
+      <th>Access</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>POST</code></td>
+      <td><code>/api/v1/auth/register</code></td>
+      <td>Register new user</td>
+      <td><img src="https://img.shields.io/badge/Public-6c757d?style=flat-square" alt="Public"></td>
+    </tr>
+    <tr>
+      <td><code>POST</code></td>
+      <td><code>/api/v1/auth/login</code></td>
+      <td>Get JWT token</td>
+      <td><img src="https://img.shields.io/badge/Public-6c757d?style=flat-square" alt="Public"></td>
+    </tr>
+  </tbody>
+</table>
 
 ### 🎬 Movies
 
-| Method | Endpoint | Description | Access |
-|--------|----------|-------------|--------|
-| GET | `/api/v1/movies` | Get all movies | Public |
-| GET | `/api/v1/movies?search={query}` | Search movies | Public |
-| GET | `/api/v1/movies/{id}` | Get movie by ID | Public |
-| POST | `/api/v1/movies` | Add movie | Admin |
-| PUT | `/api/v1/movies/{id}` | Update movie | Admin |
-| DELETE | `/api/v1/movies/{id}` | Delete movie | Admin |
+<table>
+  <thead>
+    <tr>
+      <th>Method</th>
+      <th>Endpoint</th>
+      <th>Description</th>
+      <th>Access</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>GET</code></td>
+      <td><code>/api/v1/movies</code></td>
+      <td>Get all movies</td>
+      <td><img src="https://img.shields.io/badge/Public-6c757d?style=flat-square" alt="Public"></td>
+    </tr>
+    <tr>
+      <td><code>GET</code></td>
+      <td><code>/api/v1/movies?search={query}</code></td>
+      <td>Search movies</td>
+      <td><img src="https://img.shields.io/badge/Public-6c757d?style=flat-square" alt="Public"></td>
+    </tr>
+    <tr>
+      <td><code>GET</code></td>
+      <td><code>/api/v1/movies/{id}</code></td>
+      <td>Get movie by ID</td>
+      <td><img src="https://img.shields.io/badge/Public-6c757d?style=flat-square" alt="Public"></td>
+    </tr>
+    <tr>
+      <td><code>POST</code></td>
+      <td><code>/api/v1/movies</code></td>
+      <td>Add movie</td>
+      <td><img src="https://img.shields.io/badge/Admin-343a40?style=flat-square" alt="Admin"></td>
+    </tr>
+    <tr>
+      <td><code>PUT</code></td>
+      <td><code>/api/v1/movies/{id}</code></td>
+      <td>Update movie</td>
+      <td><img src="https://img.shields.io/badge/Admin-343a40?style=flat-square" alt="Admin"></td>
+    </tr>
+    <tr>
+      <td><code>DELETE</code></td>
+      <td><code>/api/v1/movies/{id}</code></td>
+      <td>Delete movie</td>
+      <td><img src="https://img.shields.io/badge/Admin-343a40?style=flat-square" alt="Admin"></td>
+    </tr>
+  </tbody>
+</table>
 
 ### ⭐ Reviews
 
-| Method | Endpoint | Description | Access |
-|--------|----------|-------------|--------|
-| POST | `/api/v1/reviews/movies/{movieId}` | Add review | User, Admin |
-| GET | `/api/v1/reviews/my-reviews` | Get user reviews | User, Admin |
-| PUT | `/api/v1/reviews/{reviewId}` | Update review | Owner, Admin |
-| DELETE | `/api/v1/reviews/{reviewId}` | Delete review | Owner, Admin |
+<table>
+  <thead>
+    <tr>
+      <th>Method</th>
+      <th>Endpoint</th>
+      <th>Description</th>
+      <th>Access</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>POST</code></td>
+      <td><code>/api/v1/reviews/movies/{movieId}</code></td>
+      <td>Add review</td>
+      <td><img src="https://img.shields.io/badge/User-5a6268?style=flat-square" alt="User"> <img src="https://img.shields.io/badge/Admin-343a40?style=flat-square" alt="Admin"></td>
+    </tr>
+    <tr>
+      <td><code>GET</code></td>
+      <td><code>/api/v1/reviews/my-reviews</code></td>
+      <td>Get user reviews</td>
+      <td><img src="https://img.shields.io/badge/User-5a6268?style=flat-square" alt="User"> <img src="https://img.shields.io/badge/Admin-343a40?style=flat-square" alt="Admin"></td>
+    </tr>
+    <tr>
+      <td><code>PUT</code></td>
+      <td><code>/api/v1/reviews/{reviewId}</code></td>
+      <td>Update review</td>
+      <td><img src="https://img.shields.io/badge/Owner-495057?style=flat-square" alt="Owner"> <img src="https://img.shields.io/badge/Admin-343a40?style=flat-square" alt="Admin"></td>
+    </tr>
+    <tr>
+      <td><code>DELETE</code></td>
+      <td><code>/api/v1/reviews/{reviewId}</code></td>
+      <td>Delete review</td>
+      <td><img src="https://img.shields.io/badge/Owner-495057?style=flat-square" alt="Owner"> <img src="https://img.shields.io/badge/Admin-343a40?style=flat-square" alt="Admin"></td>
+    </tr>
+  </tbody>
+</table>
 
 ### 🏛️ Theaters
 
-| Method | Endpoint | Description | Access |
-|--------|----------|-------------|--------|
-| GET | `/api/v1/theaters` | Get all theaters | Public |
-| GET | `/api/v1/theaters/{id}` | Get theater by ID | Public |
-| GET | `/api/v1/theaters/search?location={location}` | Search theaters | Public |
-| POST | `/api/v1/theaters` | Add theater | Admin |
-| PUT | `/api/v1/theaters/{id}` | Update theater | Admin |
-| DELETE | `/api/v1/theaters/{id}` | Delete theater | Admin |
+<table>
+  <thead>
+    <tr>
+      <th>Method</th>
+      <th>Endpoint</th>
+      <th>Description</th>
+      <th>Access</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>GET</code></td>
+      <td><code>/api/v1/theaters</code></td>
+      <td>Get all theaters</td>
+      <td><img src="https://img.shields.io/badge/Public-6c757d?style=flat-square" alt="Public"></td>
+    </tr>
+    <tr>
+      <td><code>GET</code></td>
+      <td><code>/api/v1/theaters/{id}</code></td>
+      <td>Get theater by ID</td>
+      <td><img src="https://img.shields.io/badge/Public-6c757d?style=flat-square" alt="Public"></td>
+    </tr>
+    <tr>
+      <td><code>GET</code></td>
+      <td><code>/api/v1/theaters/search?location={location}</code></td>
+      <td>Search theaters</td>
+      <td><img src="https://img.shields.io/badge/Public-6c757d?style=flat-square" alt="Public"></td>
+    </tr>
+    <tr>
+      <td><code>POST</code></td>
+      <td><code>/api/v1/theaters</code></td>
+      <td>Add theater</td>
+      <td><img src="https://img.shields.io/badge/Admin-343a40?style=flat-square" alt="Admin"></td>
+    </tr>
+    <tr>
+      <td><code>PUT</code></td>
+      <td><code>/api/v1/theaters/{id}</code></td>
+      <td>Update theater</td>
+      <td><img src="https://img.shields.io/badge/Admin-343a40?style=flat-square" alt="Admin"></td>
+    </tr>
+    <tr>
+      <td><code>DELETE</code></td>
+      <td><code>/api/v1/theaters/{id}</code></td>
+      <td>Delete theater</td>
+      <td><img src="https://img.shields.io/badge/Admin-343a40?style=flat-square" alt="Admin"></td>
+    </tr>
+  </tbody>
+</table>
 
 ### 📅 Showtimes
 
-| Method | Endpoint | Description | Access |
-|--------|----------|-------------|--------|
-| GET | `/api/v1/showtimes?date={date}` | Get showtimes by date | Public |
-| GET | `/api/v1/showtimes/movies/{movieId}` | Get showtimes by movie | Public |
-| GET | `/api/v1/showtimes/theaters/{theaterId}` | Get showtimes by theater | Public |
-| GET | `/api/v1/showtimes/available` | Get available showtimes | Public |
-| POST | `/api/v1/showtimes` | Add showtime | Admin |
-| PUT | `/api/v1/showtimes/{id}` | Update showtime | Admin |
-| DELETE | `/api/v1/showtimes/{id}` | Delete showtime | Admin |
+<table>
+  <thead>
+    <tr>
+      <th>Method</th>
+      <th>Endpoint</th>
+      <th>Description</th>
+      <th>Access</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>GET</code></td>
+      <td><code>/api/v1/showtimes?date={date}</code></td>
+      <td>Get showtimes by date</td>
+      <td><img src="https://img.shields.io/badge/Public-6c757d?style=flat-square" alt="Public"></td>
+    </tr>
+    <tr>
+      <td><code>GET</code></td>
+      <td><code>/api/v1/showtimes/movies/{movieId}</code></td>
+      <td>Get showtimes by movie</td>
+      <td><img src="https://img.shields.io/badge/Public-6c757d?style=flat-square" alt="Public"></td>
+    </tr>
+    <tr>
+      <td><code>GET</code></td>
+      <td><code>/api/v1/showtimes/theaters/{theaterId}</code></td>
+      <td>Get showtimes by theater</td>
+      <td><img src="https://img.shields.io/badge/Public-6c757d?style=flat-square" alt="Public"></td>
+    </tr>
+    <tr>
+      <td><code>GET</code></td>
+      <td><code>/api/v1/showtimes/available</code></td>
+      <td>Get available showtimes</td>
+      <td><img src="https://img.shields.io/badge/Public-6c757d?style=flat-square" alt="Public"></td>
+    </tr>
+    <tr>
+      <td><code>POST</code></td>
+      <td><code>/api/v1/showtimes</code></td>
+      <td>Add showtime</td>
+      <td><img src="https://img.shields.io/badge/Admin-343a40?style=flat-square" alt="Admin"></td>
+    </tr>
+    <tr>
+      <td><code>PUT</code></td>
+      <td><code>/api/v1/showtimes/{id}</code></td>
+      <td>Update showtime</td>
+      <td><img src="https://img.shields.io/badge/Admin-343a40?style=flat-square" alt="Admin"></td>
+    </tr>
+    <tr>
+      <td><code>DELETE</code></td>
+      <td><code>/api/v1/showtimes/{id}</code></td>
+      <td>Delete showtime</td>
+      <td><img src="https://img.shields.io/badge/Admin-343a40?style=flat-square" alt="Admin"></td>
+    </tr>
+  </tbody>
+</table>
 
 ### 💺 Seats
 
-| Method | Endpoint | Description | Access |
-|--------|----------|-------------|--------|
-| GET | `/api/v1/seats/showtimes/{showtimeId}` | Get all seats | Public |
-| GET | `/api/v1/seats/showtimes/{showtimeId}/available` | Get available seats | Authenticated |
+<table>
+  <thead>
+    <tr>
+      <th>Method</th>
+      <th>Endpoint</th>
+      <th>Description</th>
+      <th>Access</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>GET</code></td>
+      <td><code>/api/v1/seats/showtimes/{showtimeId}</code></td>
+      <td>Get all seats</td>
+      <td><img src="https://img.shields.io/badge/Public-6c757d?style=flat-square" alt="Public"></td>
+    </tr>
+    <tr>
+      <td><code>GET</code></td>
+      <td><code>/api/v1/seats/showtimes/{showtimeId}/available</code></td>
+      <td>Get available seats</td>
+      <td><img src="https://img.shields.io/badge/Authenticated-4a4e69?style=flat-square" alt="Authenticated"></td>
+    </tr>
+  </tbody>
+</table>
 
 ### 🎟️ Reservations
 
-| Method | Endpoint | Description | Access |
-|--------|----------|-------------|--------|
-| POST | `/api/v1/reservations` | Create reservation | Authenticated |
-| GET | `/api/v1/reservations/my-reservations` | Get user reservations | Authenticated |
-| GET | `/api/v1/reservations/{id}` | Get reservation by ID | Owner, Admin |
-| DELETE | `/api/v1/reservations/{id}` | Cancel reservation | Owner, Admin |
-| GET | `/api/v1/reservations` | Get all reservations | Admin |
-| GET | `/api/v1/reservations/reports/revenue` | Get revenue report | Admin |
+<table>
+  <thead>
+    <tr>
+      <th>Method</th>
+      <th>Endpoint</th>
+      <th>Description</th>
+      <th>Access</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>POST</code></td>
+      <td><code>/api/v1/reservations</code></td>
+      <td>Create reservation</td>
+      <td><img src="https://img.shields.io/badge/Authenticated-4a4e69?style=flat-square" alt="Authenticated"></td>
+    </tr>
+    <tr>
+      <td><code>GET</code></td>
+      <td><code>/api/v1/reservations/my-reservations</code></td>
+      <td>Get user reservations</td>
+      <td><img src="https://img.shields.io/badge/Authenticated-4a4e69?style=flat-square" alt="Authenticated"></td>
+    </tr>
+    <tr>
+      <td><code>GET</code></td>
+      <td><code>/api/v1/reservations/{id}</code></td>
+      <td>Get reservation by ID</td>
+      <td><img src="https://img.shields.io/badge/Owner-495057?style=flat-square" alt="Owner"> <img src="https://img.shields.io/badge/Admin-343a40?style=flat-square" alt="Admin"></td>
+    </tr>
+    <tr>
+      <td><code>DELETE</code></td>
+      <td><code>/api/v1/reservations/{id}</code></td>
+      <td>Cancel reservation</td>
+      <td><img src="https://img.shields.io/badge/Owner-495057?style=flat-square" alt="Owner"> <img src="https://img.shields.io/badge/Admin-343a40?style=flat-square" alt="Admin"></td>
+    </tr>
+    <tr>
+      <td><code>GET</code></td>
+      <td><code>/api/v1/reservations</code></td>
+      <td>Get all reservations</td>
+      <td><img src="https://img.shields.io/badge/Admin-343a40?style=flat-square" alt="Admin"></td>
+    </tr>
+    <tr>
+      <td><code>GET</code></td>
+      <td><code>/api/v1/reservations/reports/revenue</code></td>
+      <td>Get revenue report</td>
+      <td><img src="https://img.shields.io/badge/Admin-343a40?style=flat-square" alt="Admin"></td>
+    </tr>
+  </tbody>
+</table>
 
 ## 🔒 Security
 
@@ -300,16 +528,10 @@ Authorization: Bearer eyJhbGciOiJIUzUxMiJ9...
 ### Postman Collection
 
 <div align="center">
-  <img src="docs/images/postman-public-collection.png" alt="Public Postman Collection" width="700">
-</div>
-
-#### Public Collection
-
-<div align="center">
   <h4>Movie Review & Reservation System API Collection</h4>
   <p>A comprehensive collection for testing all API endpoints with pre-configured requests and environments</p>
   <a href="https://www.postman.com/me3333-6732/movie-review-reservation-system/collection/27a274x/movie-review-reservation-system?action=share&source=copy-link&creator=40686830">
-    <img src="https://img.shields.io/badge/Postman-Run%20in%20Postman-orange?logo=postman&logoColor=white&style=for-the-badge" alt="Run in Postman">
+    <img src="https://img.shields.io/badge/Postman-Run%20in%20Postman-4a4e69?style=for-the-badge&logo=postman&logoColor=white" alt="Run in Postman">
   </a>
 </div>
 
