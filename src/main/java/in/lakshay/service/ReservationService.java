@@ -1,12 +1,15 @@
 package in.lakshay.service;
 
+import in.lakshay.dto.MasterDataDTO;
 import in.lakshay.dto.ReservationDTO;
 import in.lakshay.dto.SeatDTO;
+import in.lakshay.entity.Payment;
 import in.lakshay.entity.Reservation;
 import in.lakshay.entity.Seat;
 import in.lakshay.entity.Showtime;
 import in.lakshay.entity.User;
 import in.lakshay.exception.ResourceNotFoundException;
+import in.lakshay.repo.PaymentRepository;
 import in.lakshay.repo.ReservationRepository;
 import in.lakshay.repo.SeatRepository;
 import in.lakshay.repo.ShowtimeRepository;
@@ -33,6 +36,8 @@ public class ReservationService {
     private final UserRepository userRepository;
     private final ShowtimeRepository showtimeRepository;
     private final SeatRepository seatRepository;
+    private final PaymentRepository paymentRepository;
+    private final MasterDataService masterDataService;
     private final ModelMapper modelMapper;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -41,20 +46,21 @@ public class ReservationService {
     @Autowired
     public ReservationService(ReservationRepository reservationRepository, UserRepository userRepository,
                              ShowtimeRepository showtimeRepository, SeatRepository seatRepository,
+                             PaymentRepository paymentRepository, MasterDataService masterDataService,
                              ModelMapper modelMapper) {
         this.reservationRepository = reservationRepository;
         this.userRepository = userRepository;
         this.showtimeRepository = showtimeRepository;
         this.seatRepository = seatRepository;
+        this.paymentRepository = paymentRepository;
+        this.masterDataService = masterDataService;
         this.modelMapper = modelMapper;
     }
 
     public List<ReservationDTO> getReservationsByUser(String username) {
         log.info("Fetching reservations for user: {}", username);
-        User user = userRepository.findByUserName(username);
-        if (user == null) {
-            throw new ResourceNotFoundException("User not found with username: " + username);
-        }
+        User user = userRepository.findByUserName(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
 
         return reservationRepository.findByUser(user).stream()
                 .map(this::mapToDTO)
@@ -63,10 +69,8 @@ public class ReservationService {
 
     public List<ReservationDTO> getUpcomingReservationsByUser(String username) {
         log.info("Fetching upcoming reservations for user: {}", username);
-        User user = userRepository.findByUserName(username);
-        if (user == null) {
-            throw new ResourceNotFoundException("User not found with username: " + username);
-        }
+        User user = userRepository.findByUserName(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
 
         return reservationRepository.findUpcomingReservationsByUser(user.getId(), LocalDate.now()).stream()
                 .map(this::mapToDTO)
@@ -91,6 +95,9 @@ public class ReservationService {
         return reservationRepository.calculateRevenueForDateRange(startDate, endDate);
     }
 
+    /**
+     * Creates a reservation with CONFIRMED status (pending payment)
+     */
     @Transactional
     public ReservationDTO createReservation(String username, Long showtimeId, List<Long> seatIds) {
         log.info("Creating reservation for user: {} for showtime: {} with seats: {}", username, showtimeId, seatIds);
@@ -109,10 +116,8 @@ public class ReservationService {
         }
 
         // Find user
-        User user = userRepository.findByUserName(username);
-        if (user == null) {
-            throw new ResourceNotFoundException("User not found with username: " + username);
-        }
+        User user = userRepository.findByUserName(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
 
         // Find showtime
         Showtime showtime = showtimeRepository.findById(showtimeId)
@@ -170,7 +175,7 @@ public class ReservationService {
         reservation.setUser(user);
         reservation.setShowtime(showtime);
         reservation.setReservationTime(LocalDateTime.now());
-        reservation.setStatus(Reservation.ReservationStatus.CONFIRMED);
+        reservation.setStatusId(1); // 1 = CONFIRMED
         reservation.setTotalPrice(showtime.getPrice() * seats.size());
 
         Reservation savedReservation = reservationRepository.save(reservation);
@@ -209,7 +214,7 @@ public class ReservationService {
         }
 
         // Update reservation status
-        reservation.setStatus(Reservation.ReservationStatus.CANCELED);
+        reservation.setStatusId(3); // 3 = CANCELED
 
         // Free up seats
         List<Seat> seats = reservation.getSeats();
@@ -230,16 +235,68 @@ public class ReservationService {
     }
 
     private boolean hasRole(String username, String roleName) {
-        User user = userRepository.findByUserName(username);
-        return user != null && user.getRole().getName().equals(roleName);
+        return userRepository.findByUserName(username)
+                .map(user -> user.getRole().getName().equals(roleName))
+                .orElse(false);
+    }
+
+
+
+    /**
+     * Get reservations for a user filtered by payment status
+     */
+    public List<ReservationDTO> getReservationsByUserAndPaymentStatus(String username, boolean paid) {
+        User user = userRepository.findByUserName(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
+
+        List<Reservation> reservations = reservationRepository.findByUserAndPaid(user, paid);
+        return reservations.stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get reservations for a user filtered by status ID
+     */
+    public List<ReservationDTO> getReservationsByUserAndStatusId(String username, Integer statusId) {
+        User user = userRepository.findByUserName(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
+
+        List<Reservation> reservations = reservationRepository.findByUserAndStatusId(user, statusId);
+        return reservations.stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get reservations for a user filtered by payment status and status ID
+     */
+    public List<ReservationDTO> getReservationsByUserAndPaymentStatusAndStatusId(String username, boolean paid, Integer statusId) {
+        User user = userRepository.findByUserName(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
+
+        List<Reservation> reservations = reservationRepository.findByUserAndPaidAndStatusId(user, paid, statusId);
+        return reservations.stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
     }
 
     private ReservationDTO mapToDTO(Reservation reservation) {
         ReservationDTO dto = new ReservationDTO();
         dto.setId(reservation.getId());
         dto.setReservationTime(reservation.getReservationTime());
-        dto.setStatus(reservation.getStatus());
+        dto.setStatusId(reservation.getStatusId());
         dto.setTotalPrice(reservation.getTotalPrice());
+        dto.setPaid(reservation.isPaid());
+
+        // Get status value from master data
+        try {
+            MasterDataDTO statusData = masterDataService.getMasterDataByComponentTypeNameAndMasterDataId("RESERVATION_STATUS", reservation.getStatusId());
+            dto.setStatusValue(statusData.getValue());
+        } catch (Exception e) {
+            log.warn("Could not find status value for status ID: {}", reservation.getStatusId());
+            dto.setStatusValue("Unknown");
+        }
 
         if (reservation.getUser() != null) {
             dto.setUserName(reservation.getUser().getUserName());

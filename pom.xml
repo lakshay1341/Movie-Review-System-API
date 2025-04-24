@@ -36,6 +36,19 @@
 		<sonar.projectKey>lakshay1341_Movie-Review-System-API</sonar.projectKey>
 	</properties>
 	<dependencies>
+		<!-- Stripe Payment Gateway -->
+		<dependency>
+			<groupId>com.stripe</groupId>
+			<artifactId>stripe-java</artifactId>
+			<version>22.0.0</version>
+		</dependency>
+
+		<!-- JSON Processing -->
+		<dependency>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+			<version>20230618</version>
+		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>

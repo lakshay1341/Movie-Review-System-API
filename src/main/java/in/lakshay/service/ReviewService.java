@@ -30,10 +30,8 @@ public class ReviewService {
     public ReviewDTO addReview(String username, Long movieId, ReviewRequest reviewRequest) {
         log.info("Adding review for movie {} by user {}", movieId, username);
         try {
-            User user = userRepository.findByUserName(username);
-            if (user == null) {
-                throw new RuntimeException("User not found");
-            }
+            User user = userRepository.findByUserName(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
             Movie movie = movieRepository.findById(movieId)
                 .orElseThrow(() -> new RuntimeException("Movie not found"));
@@ -52,11 +50,11 @@ public class ReviewService {
 
             Review savedReview = reviewRepository.save(review);
             log.info("Review successfully added with ID: {}", savedReview.getId());
-            
+
             // Refresh the entity to ensure all relationships are loaded
             savedReview = reviewRepository.findById(savedReview.getId())
                 .orElseThrow(() -> new RuntimeException("Failed to retrieve saved review"));
-            
+
             return mapToDTO(savedReview);
         } catch (Exception e) {
             log.error("Error adding review: {}", e.getMessage(), e);
@@ -76,10 +74,8 @@ public class ReviewService {
     }
 
     public List<ReviewDTO> getReviewsByUser(String username) {
-        User user = userRepository.findByUserName(username);
-        if (user == null) {
-            throw new RuntimeException("User not found");
-        }
+        User user = userRepository.findByUserName(username)
+            .orElseThrow(() -> new RuntimeException("User not found"));
         List<Review> reviews = reviewRepository.findByUser(user);
         return reviews.stream().map(this::mapToDTO).collect(Collectors.toList());
     }
@@ -90,8 +86,9 @@ public class ReviewService {
     }
 
     private boolean hasRole(String username, String roleName) {
-        User user = userRepository.findByUserName(username);
-        return user != null && user.getRole().getName().equals(roleName);
+        return userRepository.findByUserName(username)
+            .map(user -> user.getRole().getName().equals(roleName))
+            .orElse(false);
     }
 
     private ReviewDTO mapToDTO(Review review) {
@@ -99,18 +96,18 @@ public class ReviewService {
         dto.setId(review.getId());
         dto.setComment(review.getComment());
         dto.setRating(review.getRating());
-        
+
         // Add null checks for Movie
         if (review.getMovie() != null) {
             dto.setMovieId(review.getMovie().getId());
             dto.setMovieTitle(review.getMovie().getTitle());
         }
-        
+
         // Add null check for User
         if (review.getUser() != null) {
             dto.setUserName(review.getUser().getUserName());
         }
-        
+
         return dto;
     }
 }

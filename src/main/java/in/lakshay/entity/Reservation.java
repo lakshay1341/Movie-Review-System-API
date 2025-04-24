@@ -29,14 +29,17 @@ public class Reservation {
     @Column(name = "reservation_time", nullable = false)
     private LocalDateTime reservationTime;
 
+    @Column(name = "status_id", nullable = false)
+    private Integer statusId = 1; // Default to CONFIRMED (1)
+
     @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
-    private ReservationStatus status = ReservationStatus.CONFIRMED;
+    private boolean paid = false;
+
+    @Transient
+    private String statusValue; // This will be populated from master data
 
     @Column(name = "total_price", nullable = false)
     private Double totalPrice;
 
-    public enum ReservationStatus {
-        CONFIRMED, CANCELED
-    }
+
 }

@@ -18,6 +18,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -56,7 +57,8 @@ public class AuthController {
                     new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword())
             );
             SecurityContextHolder.getContext().setAuthentication(authentication);
-            User user = userRepository.findByUserName(loginRequest.getUsername());
+            User user = userRepository.findByUserName(loginRequest.getUsername())
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found"));
             String token = jwtUtil.generateToken(user);
 
             log.info("User {} logged in successfully", loginRequest.getUsername());
@@ -73,7 +75,7 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest registerRequest) {
-        if (userRepository.findByUserName(registerRequest.getUsername()) != null) {
+        if (userRepository.findByUserName(registerRequest.getUsername()).isPresent()) {
             String message = messageSource.getMessage("user.exists", null, Locale.getDefault());
             return ResponseEntity.badRequest().body(new ApiResponse<>(
                     false,
@@ -93,6 +95,7 @@ public class AuthController {
 
         User user = new User();
         user.setUserName(registerRequest.getUsername());
+        user.setEmail(registerRequest.getEmail());
         user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
         user.setRole(userRole);
         userRepository.save(user);

@@ -44,10 +44,27 @@ public class ReservationController {
     @GetMapping("/my-reservations")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get user's reservations", description = "Returns all reservations for the authenticated user")
-    public ResponseEntity<ApiResponse<List<ReservationDTO>>> getMyReservations() {
+    public ResponseEntity<ApiResponse<List<ReservationDTO>>> getMyReservations(
+            @RequestParam(required = false) Boolean paid,
+            @RequestParam(required = false) Integer statusId) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        log.info("Fetching reservations for user: {}", username);
-        List<ReservationDTO> reservations = reservationService.getReservationsByUser(username);
+        log.info("Fetching reservations for user: {} with paid filter: {} and status filter: {}", username, paid, statusId);
+        List<ReservationDTO> reservations;
+
+        if (paid != null && statusId != null) {
+            // Filter by both payment status and reservation status
+            reservations = reservationService.getReservationsByUserAndPaymentStatusAndStatusId(username, paid, statusId);
+        } else if (paid != null) {
+            // Filter by payment status only
+            reservations = reservationService.getReservationsByUserAndPaymentStatus(username, paid);
+        } else if (statusId != null) {
+            // Filter by reservation status only
+            reservations = reservationService.getReservationsByUserAndStatusId(username, statusId);
+        } else {
+            // Get all reservations
+            reservations = reservationService.getReservationsByUser(username);
+        }
+
         return ResponseEntity.ok(new ApiResponse<>(
                 true,
                 messageSource.getMessage("reservations.retrieved.success", null, LocaleContextHolder.getLocale()),
@@ -139,7 +156,7 @@ public class ReservationController {
 
     @PostMapping
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Create a reservation", description = "Creates a new reservation for the authenticated user")
+    @Operation(summary = "Create a reservation", description = "Creates a new reservation for the authenticated user (payment required to complete)")
     public ResponseEntity<ApiResponse<ReservationDTO>> createReservation(
             @Valid @RequestBody ReservationRequest reservationRequest) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();

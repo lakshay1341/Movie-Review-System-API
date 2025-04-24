@@ -61,6 +61,7 @@ public class SecurityConfig {
 				.requestMatchers("/api/v1/theaters/**").permitAll()
 				.requestMatchers("/api/v1/showtimes/**").permitAll()
 				.requestMatchers("/api/v1/seats/showtimes/**").permitAll()
+				.requestMatchers("/api/v1/payments/webhook").permitAll()
 				.anyRequest().authenticated()
 			)
 			.sessionManagement(session -> session

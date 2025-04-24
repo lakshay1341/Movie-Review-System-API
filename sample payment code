@@ -1,0 +1,948 @@
+package com.job.jobportal.controller;
+
+import com.job.jobportal.dto.SubscriptionRequestDTO;
+import com.job.jobportal.response.ApiResponse;
+import com.job.jobportal.response.BadRequestException;
+import com.job.jobportal.service.StripeService;
+import com.stripe.exception.StripeException;
+import com.stripe.model.Event;
+import com.stripe.net.Webhook;
+import com.stripe.exception.SignatureVerificationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
+import org.springframework.context.NoSuchMessageException;
+import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/stripe")
+public class StripeController {
+
+    private static final Logger logger = LoggerFactory.getLogger(StripeController.class);
+
+    @Autowired
+    private StripeService stripeService;
+
+    @Autowired
+    private MessageSource messageSource;
+
+    @Value("${stripe.webhook.signing.secret}")
+    private String webhookSecret;
+
+    @PreAuthorize("hasRole('RECRUITER')")
+    @PostMapping("/create-checkout-session")
+    public ResponseEntity<?> createCheckoutSession(@Valid @RequestBody SubscriptionRequestDTO request) {
+        try {
+            Map<String, Object> session = stripeService.createCheckoutSession(
+                    request.getPlanName(),
+                    request.isYearly(),
+                    request.getSuccessUrl(),
+                    request.getCancelUrl()
+            );
+
+            String successMessage;
+            try {
+                successMessage = messageSource.getMessage(
+                        "msg.checkout.session.created",
+                        null,
+                        LocaleContextHolder.getLocale()
+                );
+            } catch (NoSuchMessageException e) {
+                successMessage = "Checkout session created successfully";
+            }
+
+            return ResponseEntity.ok(new ApiResponse<>(
+                    HttpStatus.OK,
+                    true,
+                    session,
+                    successMessage
+            ));
+        } catch (BadRequestException e) {
+            logger.error("Bad request during checkout session creation: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(new ApiResponse<>(
+                    HttpStatus.BAD_REQUEST,
+                    false,
+                    null,
+                    e.getMessage()
+            ));
+        } catch (StripeException e) {
+            logger.error("Error creating checkout session: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    false,
+                    null,
+                    "Failed to create checkout session"
+            ));
+        }
+    }
+
+    @PostMapping("/webhook")
+    public ResponseEntity<?> handleWebhook(@RequestBody String payload, HttpServletRequest request) {
+        String sigHeader = request.getHeader("Stripe-Signature");
+        if (sigHeader == null) {
+            logger.error("Missing Stripe signature header");
+            return ResponseEntity.badRequest().body(new ApiResponse<>(
+                    HttpStatus.BAD_REQUEST,
+                    false,
+                    null,
+                    "Missing Stripe signature header"
+            ));
+        }
+
+        try {
+            Event event = Webhook.constructEvent(payload, sigHeader, webhookSecret);
+            logger.info("""
+                    Processing Stripe webhook event: {}
+                    """.trim(), event.getType());
+
+            stripeService.handleWebhookEvent(event);
+
+            return ResponseEntity.ok(new ApiResponse<>(
+                    HttpStatus.OK,
+                    true,
+                    null,
+                    """
+                            Webhook processed successfully
+                            """.trim()
+            ));
+        } catch (SignatureVerificationException e) {
+            logger.error("""
+                    Invalid Stripe webhook signature: {}
+                    """.trim(), e.getMessage());
+            return ResponseEntity.badRequest().body(new ApiResponse<>(
+                    HttpStatus.BAD_REQUEST,
+                    false,
+                    null,
+                    """
+                            Invalid signature
+                            """.trim()
+            ));
+        } catch (BadRequestException e) {
+            logger.error("""
+                    Bad request in webhook: {}
+                    """.trim(), e.getMessage());
+            return ResponseEntity.badRequest().body(new ApiResponse<>(
+                    HttpStatus.BAD_REQUEST,
+                    false,
+                    null,
+                    e.getMessage()
+            ));
+        } catch (Exception e) {
+            logger.error("""
+                    Error processing webhook: {}
+                    """.trim(), e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    false,
+                    null,
+                    """
+                            Internal server error while processing webhook
+                            """.trim()
+            ));
+        }
+    }
+
+    @PreAuthorize("hasRole('RECRUITER')")
+    @GetMapping("/subscription")
+    public ResponseEntity<?> getSubscriptionDetails() {
+        try {
+            Map<String, Object> subscription = stripeService.getCurrentSubscriptionDetails();
+
+            String successMessage;
+            try {
+                successMessage = messageSource.getMessage(
+                        "msg.subscription.details.fetched",
+                        null,
+                        "Subscription details retrieved successfully",
+                        LocaleContextHolder.getLocale()
+                );
+            } catch (NoSuchMessageException e) {
+                successMessage = "Subscription details retrieved successfully";
+            }
+
+            return ResponseEntity.ok(new ApiResponse<>(
+                    HttpStatus.OK,
+                    true,
+                    subscription,
+                    successMessage
+            ));
+        } catch (BadRequestException e) {
+            logger.error("Bad request fetching subscription: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(new ApiResponse<>(
+                    HttpStatus.BAD_REQUEST,
+                    false,
+                    null,
+                    e.getMessage()
+            ));
+        } catch (Exception e) {
+            logger.error("Error fetching subscription details: {}", e.getMessage());
+
+            String errorMessage;
+            try {
+                errorMessage = messageSource.getMessage(
+                        "msg.something_went_wrong",
+                        null,
+                        "Something went wrong while fetching subscription details",
+                        LocaleContextHolder.getLocale()
+                );
+            } catch (NoSuchMessageException ex) {
+                errorMessage = "Something went wrong while fetching subscription details";
+            }
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    false,
+                    null,
+                    errorMessage
+            ));
+        }
+    }
+
+    @PreAuthorize("hasRole('RECRUITER')")
+    @DeleteMapping("/subscription")
+    public ResponseEntity<?> cancelSubscription() {
+        try {
+            stripeService.cancelCurrentSubscription();
+
+            String successMessage;
+            try {
+                successMessage = messageSource.getMessage(
+                        "msg.subscription.cancelled",
+                        null,
+                        "Subscription cancelled successfully",
+                        LocaleContextHolder.getLocale()
+                );
+            } catch (NoSuchMessageException e) {
+                successMessage = "Subscription cancelled successfully";
+            }
+
+            return ResponseEntity.ok(new ApiResponse<>(
+                    HttpStatus.OK,
+                    true,
+                    null,
+                    successMessage
+            ));
+        } catch (BadRequestException e) {
+            logger.error("Bad request cancelling subscription: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(new ApiResponse<>(
+                    HttpStatus.BAD_REQUEST,
+                    false,
+                    null,
+                    e.getMessage()
+            ));
+        } catch (Exception e) {
+            logger.error("Error cancelling subscription: {}", e.getMessage());
+
+            String errorMessage;
+            try {
+                errorMessage = messageSource.getMessage(
+                        "msg.something_went_wrong",
+                        null,
+                        "Something went wrong while cancelling the subscription",
+                        LocaleContextHolder.getLocale()
+                );
+            } catch (NoSuchMessageException ex) {
+                errorMessage = "Something went wrong while cancelling the subscription";
+            }
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    false,
+                    null,
+                    errorMessage
+            ));
+        }
+    }
+
+    @PreAuthorize("hasRole('RECRUITER')")
+    @PostMapping("/trial")
+    public ResponseEntity<?> activateTrialSubscription() {
+        try {
+            Map<String, Object> trialSubscription = stripeService.activateTrialSubscription();
+
+            String successMessage;
+            try {
+                successMessage = messageSource.getMessage(
+                        "msg.trial.activated",
+                        null,
+                        "Trial subscription activated successfully",
+                        LocaleContextHolder.getLocale()
+                );
+            } catch (NoSuchMessageException e) {
+                successMessage = "Trial subscription activated successfully";
+            }
+
+            return ResponseEntity.ok(new ApiResponse<>(
+                    HttpStatus.OK,
+                    true,
+                    trialSubscription,
+                    successMessage
+            ));
+        } catch (BadRequestException e) {
+            logger.error("Bad request activating trial: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(new ApiResponse<>(
+                    HttpStatus.BAD_REQUEST,
+                    false,
+                    null,
+                    e.getMessage()
+            ));
+        } catch (Exception e) {
+            logger.error("Error activating trial subscription: {}", e.getMessage());
+
+            String errorMessage;
+            try {
+                errorMessage = messageSource.getMessage(
+                        "msg.something_went_wrong",
+                        null,
+                        "Something went wrong while activating the trial subscription",
+                        LocaleContextHolder.getLocale()
+                );
+            } catch (NoSuchMessageException ex) {
+                errorMessage = "Something went wrong while activating the trial subscription";
+            }
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    false,
+                    null,
+                    errorMessage
+            ));
+        }
+    }
+}
+
+
+package com.job.jobportal.service;
+
+import com.job.jobportal.model.Registereduser;
+import com.job.jobportal.model.Subscription;
+import com.job.jobportal.model.SubscriptionPlan;
+import com.job.jobportal.repository.RegisteruserRepository;
+import com.job.jobportal.repository.SubscriptionPlanRepo;
+import com.job.jobportal.repository.SubscriptionRepo;
+import com.job.jobportal.response.BadRequestException;
+import com.job.jobportal.security.UserPrincipal;
+import com.job.jobportal.util.CommonUtils;
+import com.job.jobportal.util.ConstantsUtil;
+import com.stripe.Stripe;
+import com.stripe.exception.StripeException;
+import com.stripe.model.*;
+import com.stripe.model.checkout.Session;
+import com.stripe.param.checkout.SessionCreateParams;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import javax.annotation.PostConstruct;
+import java.io.Serial;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+
+@Service
+public class StripeService {
+    private static final Logger logger = LoggerFactory.getLogger(StripeService.class);
+
+    @Value("${stripe.api.key}")
+    private String stripeApiKey;
+
+    @Value("${stripe.price.standard.monthly}")
+    private String standardMonthlyPriceId;
+
+    @Value("${stripe.price.standard.yearly}")
+    private String standardYearlyPriceId;
+
+    @Value("${stripe.price.premium.monthly}")
+    private String premiumMonthlyPriceId;
+
+    @Value("${stripe.price.premium.yearly}")
+    private String premiumYearlyPriceId;
+
+    @Autowired
+    private RegisteruserRepository userRepository;
+
+    @Autowired
+    private SubscriptionPlanRepo subscriptionPlanRepo;
+
+    @Autowired
+    private SubscriptionRepo subscriptionRepo;
+
+    @PostConstruct
+    public void init() {
+        Stripe.apiKey = stripeApiKey;
+        logger.info("Stripe initialized with API key starting with: {}",
+            stripeApiKey.substring(0, 8) + "...");
+
+        try {
+            Price price = Price.retrieve(standardMonthlyPriceId);
+            logger.info("Successfully verified price ID: {}", price.getId());
+        } catch (StripeException e) {
+            logger.error("Failed to verify Stripe price: {}", e.getMessage());
+        }
+    }
+
+    @Transactional
+    public Map<String, Object> createCheckoutSession(String planName, boolean isYearly,
+            String successUrl, String cancelUrl) throws StripeException {
+        Stripe.apiKey = stripeApiKey;
+
+        logger.info("Creating checkout session for plan: {}, yearly: {}", planName, isYearly);
+
+        UserPrincipal currentUser = CommonUtils.getUserPrincipal();
+        Registereduser user = userRepository.findById(currentUser.getId())
+            .orElseThrow(() -> new BadRequestException("User not found"));
+
+        if (user.getCompanyProfile() == null) {
+            throw new BadRequestException("User must be associated with a company to subscribe");
+        }
+
+        String priceId = getPriceId(planName, isYearly);
+        logger.info("Using price ID: {}, user email: {}", priceId, user.getEmail());
+
+        try {
+            Price price = Price.retrieve(priceId);
+            logger.info("Retrieved price details - ID: {}, Currency: {}, Amount: {}",
+                price.getId(), price.getCurrency(), price.getUnitAmount());
+
+            SessionCreateParams params = SessionCreateParams.builder()
+                .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
+                .setSuccessUrl(successUrl)
+                .setCancelUrl(cancelUrl)
+                .setCustomerEmail(user.getEmail())
+                .addLineItem(SessionCreateParams.LineItem.builder()
+                    .setPrice(priceId)
+                    .setQuantity(1L)
+                    .build())
+                .setCurrency(price.getCurrency())
+                .build();
+
+            Session session = Session.create(params);
+            logger.info("Created checkout session: {}", session.getId());
+
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("sessionId", session.getId());
+            responseData.put("url", session.getUrl());
+
+            return responseData;
+        } catch (StripeException e) {
+            logger.error("Stripe error creating session. API Key prefix: {}, Price ID: {}, Error: {}",
+                stripeApiKey.substring(0, 8), priceId, e.getMessage());
+            throw e;
+        }
+    }
+
+    @Transactional
+    public void handleWebhookEvent(Event event) throws StripeException {
+        logger.info("Processing webhook event: {}", event.getType());
+
+        try {
+            switch (event.getType()) {
+                case "customer.subscription.created":
+                case "customer.subscription.updated":
+                    handleSubscriptionUpdate(event);
+                    break;
+                case "customer.subscription.deleted":
+                    handleSubscriptionDeletion(event);
+                    break;
+                case "checkout.session.completed":
+                    handleCheckoutComplete(event);
+                    break;
+                case "invoice.payment_succeeded":
+                    handleInvoicePaymentSucceeded(event);
+                    break;
+                case "customer.created":
+                    handleCustomerCreated(event);
+                    break;
+                case "customer.updated":
+                    handleCustomerUpdated(event);
+                    break;
+                case "payment_intent.succeeded":
+                    handlePaymentIntentSucceeded(event);
+                    break;
+                case "invoice.paid":
+                    handleInvoicePaid(event);
+                    break;
+                default:
+                    logger.info("Unhandled event type: {}", event.getType());
+            }
+        } catch (Exception e) {
+            logger.error("Error processing webhook event {}: {}", event.getType(), e.getMessage(), e);
+            if (e instanceof BadRequestException) {
+                logger.warn("Bad request while processing webhook: {}", e.getMessage());
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    @Transactional
+    public Map<String, Object> getCurrentSubscriptionDetails() throws StripeException {
+        UserPrincipal currentUser = CommonUtils.getUserPrincipal();
+        Registereduser user = userRepository.findById(currentUser.getId())
+            .orElseThrow(() -> new BadRequestException("User not found"));
+
+        Optional<Subscription> subscription = subscriptionRepo.findByRegistereduser(user);
+        if (!subscription.isPresent()) {
+            throw new BadRequestException("No active subscription found");
+        }
+
+        if (subscription.get().getSubscriptionStatus() == ConstantsUtil.SUBSCRIPTION_STATUS_TRIAL) {
+            checkTrialExpiration(subscription.get());
+
+            if (subscription.get().getSubscriptionStatus() == ConstantsUtil.SUBSCRIPTION_STATUS_TRIAL) {
+                return buildTrialSubscriptionResponse(subscription.get());
+            }
+        }
+
+        if (subscription.get().getSubscriptionAccountId() != null) {
+            com.stripe.model.Subscription stripeSubscription =
+                com.stripe.model.Subscription.retrieve(subscription.get().getSubscriptionAccountId());
+            return buildSubscriptionResponse(stripeSubscription);
+        } else {
+            throw new BadRequestException("Invalid subscription configuration");
+        }
+    }
+
+    @Transactional
+    public void cancelCurrentSubscription() throws StripeException {
+        UserPrincipal currentUser = CommonUtils.getUserPrincipal();
+        Registereduser user = userRepository.findById(currentUser.getId())
+            .orElseThrow(() -> new BadRequestException("User not found"));
+
+        Optional<Subscription> subscription = subscriptionRepo.findByRegistereduser(user);
+        if (!subscription.isPresent()) {
+            throw new BadRequestException("No active subscription found");
+        }
+
+        if (subscription.get().getSubscriptionStatus() == ConstantsUtil.SUBSCRIPTION_STATUS_TRIAL) {
+            subscription.get().setSubscriptionStatus(ConstantsUtil.SUBSCRIPTION_STATUS_CANCELLED);
+            subscriptionRepo.save(subscription.get());
+            return;
+        }
+
+        if (subscription.get().getSubscriptionAccountId() != null) {
+            com.stripe.model.Subscription stripeSubscription =
+                com.stripe.model.Subscription.retrieve(subscription.get().getSubscriptionAccountId());
+            stripeSubscription.cancel();
+
+            subscription.get().setSubscriptionStatus(ConstantsUtil.SUBSCRIPTION_STATUS_CANCELLED);
+            subscriptionRepo.save(subscription.get());
+        } else {
+            throw new BadRequestException("Invalid subscription configuration");
+        }
+    }
+
+    @Transactional
+    public Map<String, Object> activateTrialSubscription() {
+        UserPrincipal currentUser = CommonUtils.getUserPrincipal();
+        Registereduser user = userRepository.findById(currentUser.getId())
+            .orElseThrow(() -> new BadRequestException("User not found"));
+
+        Optional<Subscription> existingSubscription = subscriptionRepo.findByRegistereduser(user);
+
+        if (existingSubscription.isPresent()) {
+            Subscription subscription = existingSubscription.get();
+
+            if (subscription.isTrialUsed()) {
+                throw new BadRequestException("Trial period has already been used");
+            }
+
+            if (subscription.getSubscriptionStatus() == ConstantsUtil.SUBSCRIPTION_STATUS_ACTIVE) {
+                throw new BadRequestException("User already has an active subscription");
+            }
+
+            if (subscription.getSubscriptionStatus() == ConstantsUtil.SUBSCRIPTION_STATUS_TRIAL) {
+                checkTrialExpiration(subscription);
+
+                if (subscription.getSubscriptionStatus() == ConstantsUtil.SUBSCRIPTION_STATUS_TRIAL) {
+                    return buildTrialSubscriptionResponse(subscription);
+                }
+            }
+        }
+
+        Subscription subscription = existingSubscription.orElse(new Subscription());
+        subscription.setRegistereduser(user);
+        subscription.setSubscriptionPlanType(ConstantsUtil.SUBSCRIPTION_TRIAL_PLAN);
+        subscription.setSubscriptionStatus(ConstantsUtil.SUBSCRIPTION_STATUS_TRIAL);
+
+        Date now = new Date();
+        subscription.setTrialStartDate(now);
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(now);
+        calendar.add(Calendar.DAY_OF_MONTH, 30);
+        Date trialEndDate = calendar.getTime();
+        subscription.setTrialEndDate(trialEndDate);
+
+        subscription.setTrialUsed(true);
+
+        subscriptionRepo.save(subscription);
+
+        logger.info("Trial subscription activated for user: {}", user.getEmail());
+
+        return buildTrialSubscriptionResponse(subscription);
+    }
+
+    private String getPriceId(String planName, boolean isYearly) {
+        logger.info("Getting price ID for plan: {}, yearly: {}", planName, isYearly);
+        if ("standard".equals(planName)) {
+            return isYearly ? standardYearlyPriceId : standardMonthlyPriceId;
+        } else if ("premium".equals(planName)) {
+            return isYearly ? premiumYearlyPriceId : premiumMonthlyPriceId;
+        }
+        throw new BadRequestException("Invalid plan name: " + planName);
+    }
+
+    private void handleSubscriptionUpdate(Event event) throws StripeException {
+        try {
+            com.stripe.model.Subscription stripeSubscription = (com.stripe.model.Subscription)
+                event.getDataObjectDeserializer().getObject()
+                    .orElseThrow(() -> new BadRequestException("Invalid webhook payload"));
+
+            Customer customer = Customer.retrieve(stripeSubscription.getCustomer());
+            if (customer == null || customer.getEmail() == null) {
+                logger.error("Customer or customer email not found for subscription: {}",
+                    stripeSubscription.getId());
+                return;
+            }
+
+            final String customerEmail = customer.getEmail();
+            logger.info("Processing subscription update for customer: {}", customerEmail);
+
+            Registereduser user = userRepository.findByEmail(customerEmail)
+                .orElseThrow(() -> new BadRequestException("User not found for email: " + customerEmail));
+
+            Subscription subscription = subscriptionRepo.findByRegistereduser(user)
+                .orElse(new Subscription());
+
+            updateSubscriptionDetails(subscription, stripeSubscription, user);
+            logger.info("Successfully updated subscription for user: {}", customerEmail);
+
+        } catch (BadRequestException e) {
+            logger.warn("Bad request in handleSubscriptionUpdate: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error in handleSubscriptionUpdate: {}", e.getMessage(), e);
+            throw new StripeException("Failed to process subscription update", null, null, null, null) {
+                private static final long serialVersionUID = 1L;
+            };
+        }
+    }
+
+    private void handleSubscriptionDeletion(Event event) throws StripeException {
+        com.stripe.model.Subscription stripeSubscription = (com.stripe.model.Subscription) event.getDataObjectDeserializer()
+            .getObject().orElseThrow(() -> new BadRequestException("Invalid webhook payload"));
+
+        Customer customer = Customer.retrieve(stripeSubscription.getCustomer());
+        Registereduser user = userRepository.findByEmail(customer.getEmail())
+            .orElseThrow(() -> new BadRequestException("User not found"));
+
+        Optional<Subscription> subscription = subscriptionRepo.findByRegistereduser(user);
+        if (subscription.isPresent()) {
+            subscription.get().setSubscriptionStatus(ConstantsUtil.SUBSCRIPTION_STATUS_CANCELLED);
+            subscriptionRepo.save(subscription.get());
+        }
+    }
+
+    private void handleCheckoutComplete(Event event) throws StripeException {
+        Session session = (Session) event.getDataObjectDeserializer()
+            .getObject().orElseThrow(() -> new BadRequestException("Invalid webhook payload"));
+
+        Registereduser user = userRepository.findByEmail(session.getCustomerEmail())
+            .orElseThrow(() -> new BadRequestException("User not found"));
+
+        user.setCustomerStripeId(session.getCustomer());
+        userRepository.save(user);
+    }
+
+    private void updateSubscriptionDetails(Subscription subscription,
+            com.stripe.model.Subscription stripeSubscription, Registereduser user) {
+        try {
+            subscription.setRegistereduser(user);
+            subscription.setSubscriptionAccountId(stripeSubscription.getId());
+
+            String status = stripeSubscription.getStatus();
+            boolean isActiveStatus = """
+                active
+                """.trim().equals(status) ||
+                """
+                trialing
+                """.trim().equals(status);
+
+            boolean isTrialStatus = """
+                trialing
+                """.trim().equals(status);
+
+            if (isTrialStatus) {
+                subscription.setSubscriptionStatus(ConstantsUtil.SUBSCRIPTION_STATUS_TRIAL);
+            } else {
+                subscription.setSubscriptionStatus(isActiveStatus ?
+                    ConstantsUtil.SUBSCRIPTION_STATUS_ACTIVE :
+                    ConstantsUtil.SUBSCRIPTION_STATUS_CANCELLED);
+            }
+
+            if (stripeSubscription.getItems() != null && !stripeSubscription.getItems().getData().isEmpty()) {
+                SubscriptionItem item = stripeSubscription.getItems().getData().get(0);
+                if (item.getPrice() != null) {
+                    String priceId = item.getPrice().getId();
+                    Optional<SubscriptionPlan> plan = subscriptionPlanRepo.findByPlanObject(priceId);
+                    if (plan.isPresent()) {
+                        subscription.setSubscriptionPlanType(determineSubscriptionType(plan.get().getPlanName()));
+                    }
+                }
+            }
+
+            subscriptionRepo.save(subscription);
+            logger.info("""
+                Subscription details updated successfully for user: {}
+                """.trim(), user.getEmail());
+
+        } catch (Exception e) {
+            logger.error("""
+                Error in updateSubscriptionDetails: {}
+                """.trim(), e.getMessage(), e);
+            throw new RuntimeException("Failed to update subscription details", e);
+        }
+    }
+
+    private int determineSubscriptionType(String planName) {
+        return switch (planName.toLowerCase()) {
+            case "basic" -> ConstantsUtil.SUBSCRIPTION_BASIC_PLAN;
+            case "starter" -> ConstantsUtil.SUBSCRIPTION_STANDARD_PLAN;
+            case "advance" -> ConstantsUtil.SUBSCRIPTION_PREMIUM_PLAN;
+            case "trial" -> ConstantsUtil.SUBSCRIPTION_TRIAL_PLAN;
+            default -> ConstantsUtil.SUBSCRIPTION_FREE_PLAN;
+        };
+    }
+
+    private Map<String, Object> buildSubscriptionResponse(com.stripe.model.Subscription stripeSubscription) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("id", stripeSubscription.getId());
+        response.put("status", stripeSubscription.getStatus());
+        response.put("currentPeriodEnd", new Date(stripeSubscription.getCurrentPeriodEnd() * 1000L));
+        response.put("currentPeriodStart", new Date(stripeSubscription.getCurrentPeriodStart() * 1000L));
+        response.put("cancelAtPeriodEnd", stripeSubscription.getCancelAtPeriodEnd());
+        return response;
+    }
+
+    private Map<String, Object> buildTrialSubscriptionResponse(Subscription subscription) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("id", "trial-" + subscription.getSubscriptionId());
+        response.put("status", "trial");
+        response.put("currentPeriodStart", subscription.getTrialStartDate());
+        response.put("currentPeriodEnd", subscription.getTrialEndDate());
+        response.put("cancelAtPeriodEnd", false);
+        response.put("isTrial", true);
+        response.put("planType", "trial");
+        response.put("planName", "Trial Plan");
+
+        long diffInMillies = subscription.getTrialEndDate().getTime() - new Date().getTime();
+        long diffInDays = TimeUnit.DAYS.convert(diffInMillies, TimeUnit.MILLISECONDS);
+        response.put("daysRemaining", diffInDays);
+        response.put("timeRemaining", diffInMillies);
+
+        return response;
+    }
+
+    @Transactional
+    public void checkTrialExpiration(Subscription subscription) {
+        if (subscription.getSubscriptionStatus() != ConstantsUtil.SUBSCRIPTION_STATUS_TRIAL) {
+            return;
+        }
+
+        Date now = new Date();
+        Date trialEndDate = subscription.getTrialEndDate();
+
+        if (trialEndDate == null) {
+            logger.error("Trial subscription {} has no end date", subscription.getSubscriptionId());
+            return;
+        }
+
+        if (now.after(trialEndDate)) {
+            logger.info("Trial subscription {} has expired. Updating status.", subscription.getSubscriptionId());
+            subscription.setSubscriptionStatus(ConstantsUtil.SUBSCRIPTION_STATUS_CANCELLED);
+            subscriptionRepo.save(subscription);
+        }
+    }
+
+    @Transactional
+    public Subscription checkAndActivateTrialForRecruiter(Registereduser user) {
+        boolean isRecruiter = user.getRoles().stream()
+            .anyMatch(role -> "RECRUITER".equalsIgnoreCase(role.getRolename()));
+
+        if (!isRecruiter) {
+            return null;
+        }
+
+        Optional<Subscription> existingSubscription = subscriptionRepo.findByRegistereduser(user);
+
+        if (!existingSubscription.isPresent()) {
+            return createTrialSubscription(user);
+        } else {
+            Subscription subscription = existingSubscription.get();
+
+            if (subscription.getSubscriptionStatus() == ConstantsUtil.SUBSCRIPTION_STATUS_ACTIVE ||
+                subscription.getSubscriptionStatus() == ConstantsUtil.SUBSCRIPTION_STATUS_TRIAL) {
+
+                if (subscription.getSubscriptionStatus() == ConstantsUtil.SUBSCRIPTION_STATUS_TRIAL) {
+                    checkTrialExpiration(subscription);
+                }
+
+                return subscription;
+            }
+
+            if (!subscription.isTrialUsed()) {
+                return createTrialSubscription(user);
+            }
+        }
+
+        return null;
+    }
+
+    private Subscription createTrialSubscription(Registereduser user) {
+        Subscription subscription = new Subscription();
+        subscription.setRegistereduser(user);
+        subscription.setSubscriptionPlanType(ConstantsUtil.SUBSCRIPTION_TRIAL_PLAN);
+        subscription.setSubscriptionStatus(ConstantsUtil.SUBSCRIPTION_STATUS_TRIAL);
+
+        Date now = new Date();
+        subscription.setTrialStartDate(now);
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(now);
+        calendar.add(Calendar.DAY_OF_MONTH, 30);
+        Date trialEndDate = calendar.getTime();
+        subscription.setTrialEndDate(trialEndDate);
+
+        subscription.setTrialUsed(true);
+
+        subscriptionRepo.save(subscription);
+
+        logger.info("Trial subscription automatically activated for recruiter: {}", user.getEmail());
+
+        return subscription;
+    }
+
+    private void handleInvoicePaymentSucceeded(Event event) throws StripeException {
+        Invoice invoice = (Invoice) event.getDataObjectDeserializer()
+            .getObject().orElseThrow(() -> new BadRequestException("Invalid webhook payload"));
+
+        String customerEmail = null;
+        Customer customer = Customer.retrieve(invoice.getCustomer());
+        if (customer != null) {
+            customerEmail = customer.getEmail();
+            logger.info("Processing invoice payment success for customer: {}", customerEmail);
+
+            if (customerEmail != null) {
+                final String email = customerEmail;
+                final Registereduser user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new BadRequestException("User not found for email: " + email));
+
+                subscriptionRepo.findByRegistereduser(user)
+                    .ifPresent(subscription -> {
+                        subscription.setLastPaymentStatus("""
+                            PAID
+                            """.trim());
+                        subscription.setLastPaymentDate(new Date());
+                        subscriptionRepo.save(subscription);
+                    });
+            }
+        }
+    }
+
+    private void handleCustomerCreated(Event event) throws StripeException {
+        Customer customer = (Customer) event.getDataObjectDeserializer()
+            .getObject().orElseThrow(() -> new BadRequestException("Invalid webhook payload"));
+
+        String customerEmail = customer.getEmail();
+        if (customerEmail != null) {
+            Registereduser user = userRepository.findByEmail(customerEmail)
+                .orElseThrow(() -> new BadRequestException("User not found for email: " + customerEmail));
+
+            user.setCustomerStripeId(customer.getId());
+            userRepository.save(user);
+            logger.info("Updated Stripe customer ID for user: {}", customerEmail);
+        }
+    }
+
+    private void handleCustomerUpdated(Event event) throws StripeException {
+        Customer customer = (Customer) event.getDataObjectDeserializer()
+            .getObject().orElseThrow(() -> new BadRequestException("Invalid webhook payload"));
+
+        String customerEmail = customer.getEmail();
+        if (customerEmail != null) {
+            Registereduser user = userRepository.findByEmail(customerEmail)
+                .orElseThrow(() -> new BadRequestException("User not found for email: " + customerEmail));
+
+            user.setCustomerStripeId(customer.getId());
+            userRepository.save(user);
+            logger.info("Updated customer information for user: {}", customerEmail);
+        }
+    }
+
+    private void handlePaymentIntentSucceeded(Event event) throws StripeException {
+        PaymentIntent paymentIntent = (PaymentIntent) event.getDataObjectDeserializer()
+            .getObject().orElseThrow(() -> new BadRequestException("Invalid webhook payload"));
+
+        String customerEmail = null;
+        if (paymentIntent.getCustomer() != null) {
+            Customer customer = Customer.retrieve(paymentIntent.getCustomer());
+            customerEmail = customer.getEmail();
+
+            if (customerEmail != null) {
+                logger.info("Payment succeeded for customer: {}", customerEmail);
+            }
+        }
+    }
+
+    private void handleInvoicePaid(Event event) throws StripeException {
+        Invoice invoice = (Invoice) event.getDataObjectDeserializer()
+            .getObject().orElseThrow(() -> new BadRequestException("Invalid webhook payload"));
+
+        String customerEmail = null;
+        Customer customer = Customer.retrieve(invoice.getCustomer());
+        if (customer != null) {
+            customerEmail = customer.getEmail();
+            logger.info("Invoice paid for customer: {}", customerEmail);
+
+            if (customer.getEmail() != null) {
+                customerEmail = customer.getEmail();
+                String finalCustomerEmail = customerEmail;
+                final Registereduser user = userRepository.findByEmail(customerEmail)
+                    .orElseThrow(() -> new BadRequestException("User not found for email: " + finalCustomerEmail));
+
+                Optional<Subscription> subscription = subscriptionRepo.findByRegistereduser(user);
+                if (subscription.isPresent()) {
+                    subscription.get().setLastPaymentStatus("PAID");
+                    subscription.get().setLastPaymentDate(new Date());
+                    subscriptionRepo.save(subscription.get());
+                }
+            }
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
