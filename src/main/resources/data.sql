@@ -1,16 +1,27 @@
+-- Insert component types if they don't exist
+INSERT INTO component_types (id, name) VALUES (1, 'RESERVATION_STATUS') ON DUPLICATE KEY UPDATE name = 'RESERVATION_STATUS';
+
+-- Insert master data for reservation statuses if they don't exist
+INSERT INTO master_data (master_data_id, value, component_type_id) VALUES (1, 'CONFIRMED', 1) ON DUPLICATE KEY UPDATE value = 'CONFIRMED';
+INSERT INTO master_data (master_data_id, value, component_type_id) VALUES (2, 'PAID', 1) ON DUPLICATE KEY UPDATE value = 'PAID';
+INSERT INTO master_data (master_data_id, value, component_type_id) VALUES (3, 'CANCELED', 1) ON DUPLICATE KEY UPDATE value = 'CANCELED';
+
+-- Update any existing reservations to use the new status IDs
+UPDATE reservations SET status_id = 1 WHERE status_id IS NULL;
+
 -- If roles table is empty, insert default roles
 INSERT INTO roles (name) SELECT 'ROLE_USER' WHERE NOT EXISTS (SELECT 1 FROM roles WHERE name = 'ROLE_USER');
 INSERT INTO roles (name) SELECT 'ROLE_ADMIN' WHERE NOT EXISTS (SELECT 1 FROM roles WHERE name = 'ROLE_ADMIN');
 
 -- If admin user doesn't exist, create it
-INSERT INTO users (user_name, password, role_id)
-SELECT 'admin', '$2a$12$ZFqD8mVpocAMPR.Tgrwkee2ChoY8wEpVCCKjOtRo1tX7KggSYb5Iq',
+INSERT INTO users (user_name, email, password, role_id)
+SELECT 'admin', 'admin@moviereview.com', '$2a$12$ZFqD8mVpocAMPR.Tgrwkee2ChoY8wEpVCCKjOtRo1tX7KggSYb5Iq',
 (SELECT id FROM roles WHERE name = 'ROLE_ADMIN')
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE user_name = 'admin');
 
 -- If test user doesn't exist, create it
-INSERT INTO users (user_name, password, role_id)
-SELECT 'user', '$2a$12$ZFqD8mVpocAMPR.Tgrwkee2ChoY8wEpVCCKjOtRo1tX7KggSYb5Iq',
+INSERT INTO users (user_name, email, password, role_id)
+SELECT 'user', 'user@moviereview.com', '$2a$12$ZFqD8mVpocAMPR.Tgrwkee2ChoY8wEpVCCKjOtRo1tX7KggSYb5Iq',
 (SELECT id FROM roles WHERE name = 'ROLE_USER')
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE user_name = 'user');
 

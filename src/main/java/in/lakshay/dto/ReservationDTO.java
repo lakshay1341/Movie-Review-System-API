@@ -1,6 +1,6 @@
 package in.lakshay.dto;
 
-import in.lakshay.entity.Reservation.ReservationStatus;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,6 +21,8 @@ public class ReservationDTO {
     private String showTime;
     private List<SeatDTO> seats;
     private LocalDateTime reservationTime;
-    private ReservationStatus status;
+    private Integer statusId;
+    private String statusValue;
     private Double totalPrice;
+    private boolean paid;
 }

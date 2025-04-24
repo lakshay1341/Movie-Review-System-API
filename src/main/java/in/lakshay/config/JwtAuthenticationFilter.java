@@ -27,9 +27,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        String authHeader = request.getHeader("Authorization");
+        String requestURI = request.getRequestURI();
+        log.debug("Request URI: {}", requestURI);
 
-        log.debug("Request URI: {}", request.getRequestURI());
+        // Skip authentication for webhook endpoint
+        if (requestURI.equals("/api/v1/payments/webhook")) {
+            log.debug("Skipping authentication for webhook endpoint");
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        String authHeader = request.getHeader("Authorization");
         log.debug("Auth Header: {}", authHeader);
 
         if (authHeader == null) {
