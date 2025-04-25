@@ -36,6 +36,13 @@
 		<sonar.projectKey>lakshay1341_Movie-Review-System-API</sonar.projectKey>
 	</properties>
 	<dependencies>
+		<!-- AWS SDK for Java -->
+		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>aws-java-sdk-s3</artifactId>
+			<version>1.12.641</version>
+		</dependency>
+
 		<!-- Stripe Payment Gateway -->
 		<dependency>
 			<groupId>com.stripe</groupId>

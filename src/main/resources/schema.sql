@@ -15,7 +15,9 @@ CREATE TABLE IF NOT EXISTS master_data (
 );
 
 -- Create a composite index on component_type_id and master_data_id
-CREATE INDEX IF NOT EXISTS idx_component_master_data ON master_data(component_type_id, master_data_id);
+-- Note: We're removing the IF NOT EXISTS clause as it's not supported in MySQL for indexes
+-- The unique constraint already creates an index, so this is actually redundant
+-- CREATE INDEX idx_component_master_data ON master_data(component_type_id, master_data_id);
 
 -- Create roles table if it doesn't exist
 CREATE TABLE IF NOT EXISTS roles (
@@ -75,7 +77,7 @@ CREATE TABLE IF NOT EXISTS reservations (
     total_price DECIMAL(10, 2) NOT NULL,
     paid BOOLEAN NOT NULL DEFAULT FALSE,
     FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (showtime_id) REFERENCES showtimes(id),
+    FOREIGN KEY (showtime_id) REFERENCES showtimes(id)
     -- No foreign key constraint for status_id to allow flexibility
 );
 
