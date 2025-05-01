@@ -28,6 +28,7 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping(Constants.RESERVATIONS_PATH)
@@ -78,8 +79,19 @@ public class ReservationController {
     @Operation(summary = "Get user's upcoming reservations", description = "Returns upcoming reservations for the authenticated user")
     public ResponseEntity<ApiResponse<List<ReservationDTO>>> getMyUpcomingReservations() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        log.info("Fetching upcoming reservations for user: {}", username);
+        log.info("API call: Fetching upcoming reservations for user: {}", username);
+
         List<ReservationDTO> reservations = reservationService.getUpcomingReservationsByUser(username);
+        log.info("Returning {} upcoming reservations for user: {}", reservations.size(), username);
+
+        // Log the IDs of the reservations being returned
+        if (!reservations.isEmpty()) {
+            String reservationIds = reservations.stream()
+                    .map(r -> String.valueOf(r.getId()))
+                    .collect(Collectors.joining(", "));
+            log.info("Upcoming reservation IDs for user {}: {}", username, reservationIds);
+        }
+
         return ResponseEntity.ok(new ApiResponse<>(
                 true,
                 messageSource.getMessage("reservations.upcoming.retrieved.success", null, LocaleContextHolder.getLocale()),
@@ -101,7 +113,7 @@ public class ReservationController {
         ReservationDTO reservation = reservationService.getReservationById(id);
 
         // Check if user is authorized to view this reservation
-        if (!isAdmin && !reservation.getUserName().equals(username)) {
+        if (!isAdmin && !reservation.getUsername().equals(username)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new ApiResponse<>(
                             false,
@@ -120,10 +132,10 @@ public class ReservationController {
     @RateLimiter(name = "basic")
     @GetMapping("/all")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    @Operation(summary = "Get all confirmed reservations", description = "Returns all confirmed reservations (Admin only)")
+    @Operation(summary = "Get all reservations", description = "Returns all reservations regardless of status (Admin only)")
     public ResponseEntity<ApiResponse<Page<ReservationDTO>>> getAllConfirmedReservations(
             @PageableDefault(size = 10) Pageable pageable) {
-        log.info("Fetching all confirmed reservations");
+        log.info("Fetching all reservations");
         Page<ReservationDTO> reservations = reservationService.getAllConfirmedReservations(pageable);
         return ResponseEntity.ok(new ApiResponse<>(
                 true,

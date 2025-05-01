@@ -13,4 +13,7 @@ public class ReviewRequest {
     @Min(value = Constants.MIN_RATING, message = "Rating must be between 1 and 5")
     @Max(value = Constants.MAX_RATING, message = "Rating must be between 1 and 5")
     private int rating;
+
+    @Size(max = 255, message = "Helpful tags must be less than 255 characters")
+    private String helpfulTags;
 }

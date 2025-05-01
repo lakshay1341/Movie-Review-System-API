@@ -14,13 +14,13 @@ public class MasterData {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    
+
     @Column(name = "master_data_id", nullable = false)
     private Integer masterDataId;
-    
-    @Column(nullable = false)
+
+    @Column(name = "data_value", nullable = false)
     private String value;
-    
+
     @ManyToOne
     @JoinColumn(name = "component_type_id", nullable = false)
     private ComponentType componentType;

@@ -12,4 +12,8 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
 
     @Query("SELECT m FROM Movie m LEFT JOIN FETCH m.reviews")
     Page<Movie> findAllWithReviews(Pageable pageable);
-}
+    @Query("SELECT m FROM Movie m LEFT JOIN FETCH m.reviews WHERE " +
+            "(:search IS NULL OR LOWER(m.title) LIKE LOWER(CONCAT('%', :search, '%'))) AND " +
+            "(:genre IS NULL OR LOWER(m.genre) = LOWER(:genre)) AND " +
+            "(:year IS NULL OR m.releaseYear = :year)")
+    Page<Movie> findMoviesWithFilters(String search, String genre, Integer year, Pageable pageable);}
