@@ -1,14 +1,17 @@
 <div align="center">
 
-# 🎬 Movie Review & Reservation System
+# 🎬 CineTicket - Movie Review & Reservation System
 
 [![Java](https://img.shields.io/badge/Java-17-4a4e69?style=for-the-badge&logo=openjdk&logoColor=white)](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html)
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.2.3-4a4e69?style=for-the-badge&logo=spring&logoColor=white)](https://spring.io/projects/spring-boot)
 [![MySQL](https://img.shields.io/badge/MySQL-8.0-4a4e69?style=for-the-badge&logo=mysql&logoColor=white)](https://www.mysql.com/)
 [![JWT](https://img.shields.io/badge/JWT-0.12.6-4a4e69?style=for-the-badge&logo=jsonwebtokens&logoColor=white)](https://github.com/jwtk/jjwt)
+[![Stripe](https://img.shields.io/badge/Stripe-22.0.0-4a4e69?style=for-the-badge&logo=stripe&logoColor=white)](https://stripe.com/)
 [![License](https://img.shields.io/badge/License-MIT-4a4e69?style=for-the-badge&logo=opensourceinitiative&logoColor=white)](LICENSE)
 
 **A modern, secure, and scalable RESTful API for movie reviews and theater seat reservations**
+
+🌐 **[Live Demo: https://cineticket.onrender.com](https://cineticket.onrender.com)**
 
 [Features](#-key-features) •
 [Architecture](#-architecture) •
@@ -22,9 +25,11 @@
 
 ## 📋 Overview
 
-The **Movie Review & Reservation System** is an enterprise-grade Spring Boot application that provides a comprehensive solution for movie enthusiasts. It seamlessly integrates movie reviews with theater seat reservations, offering a complete platform for users to discover movies, share opinions, and book seats for upcoming shows.
+**CineTicket** is an enterprise-grade Spring Boot application that provides a comprehensive solution for movie enthusiasts. It seamlessly integrates movie reviews with theater seat reservations, offering a complete platform for users to discover movies, share opinions, and book seats for upcoming shows.
 
-Built with modern Java and Spring technologies, this API implements industry best practices including JWT authentication, role-based access control, rate limiting, and comprehensive API documentation.
+Built with modern Java and Spring technologies, this API implements industry best practices including JWT authentication, role-based access control, Stripe payment integration, PDF receipt generation, email notifications, rate limiting, and comprehensive API documentation.
+
+The system is deployed and fully functional at [https://cineticket.onrender.com](https://cineticket.onrender.com).
 
 ## ✨ Key Features
 
@@ -46,7 +51,9 @@ Built with modern Java and Spring technologies, this API implements industry bes
           <li>Theater management</li>
           <li>Showtime scheduling</li>
           <li>Seat selection & booking</li>
-          <li>Reservation management</li>
+          <li>Stripe payment integration</li>
+          <li>PDF receipt generation</li>
+          <li>Email notifications</li>
         </ul>
       </td>
       <td align="center" width="33%">
@@ -71,6 +78,7 @@ Built with modern Java and Spring technologies, this API implements industry bes
 [![MySQL](https://img.shields.io/badge/MySQL-8.0-4a4e69?style=for-the-badge&logo=mysql&logoColor=white)](https://www.mysql.com/)
 [![Spring Security](https://img.shields.io/badge/Spring_Security-4a4e69?style=for-the-badge&logo=spring-security&logoColor=white)](https://spring.io/projects/spring-security)
 [![Swagger](https://img.shields.io/badge/Swagger-OpenAPI_3.0-4a4e69?style=for-the-badge&logo=swagger&logoColor=white)](https://swagger.io/)
+[![Stripe](https://img.shields.io/badge/Stripe-22.0.0-4a4e69?style=for-the-badge&logo=stripe&logoColor=white)](https://stripe.com/)
 
 </div>
 
@@ -80,6 +88,9 @@ Built with modern Java and Spring technologies, this API implements industry bes
 - **Database**: MySQL 8.0
 - **Security**: Spring Security, JJWT 0.12.6
 - **API Documentation**: Swagger OpenAPI 3.0
+- **Payment Processing**: Stripe API 22.0.0
+- **PDF Generation**: iText 5.5.13.3
+- **Email Service**: Spring Mail
 - **Utilities**: Lombok, Resilience4j, MessageSource
 - **Testing**: JUnit 5, Mockito
 
@@ -136,21 +147,45 @@ CREATE DATABASE moviereviewdbupdated;
 
 3. **Configure application properties**
 
-Update `src/main/resources/application.properties` with your database credentials and JWT configuration.
+Update `src/main/resources/application.properties` with your database credentials, JWT configuration, and Stripe API keys.
 
 > **⚠️ Security Note**: Generate a secure JWT secret using `openssl rand -base64 64` and never commit it to version control.
 
-4. **Build and run the application**
+4. **Set up environment variables**
+
+Create a `.env` file based on the provided `.env.example` with your configuration:
+
+```
+# Database Configuration
+MYSQL_URL=jdbc:mysql://localhost:3306/moviereviewdbupdated
+MYSQL_USERNAME=root
+MYSQL_PASSWORD=root
+
+# JWT Configuration
+JWT_SECRET=your-secure-jwt-secret
+JWT_EXPIRATION=3600000
+
+# Stripe Configuration
+STRIPE_API_KEY=your-stripe-api-key
+STRIPE_WEBHOOK_SECRET=your-stripe-webhook-secret
+
+# Email Configuration
+EMAIL_USERNAME=your-email@gmail.com
+EMAIL_PASSWORD=your-email-app-password
+```
+
+5. **Build and run the application**
 
 ```bash
 mvn clean install
 mvn spring-boot:run
 ```
 
-5. **Access the application**
+6. **Access the application**
 
 - API: [http://localhost:8080](http://localhost:8080)
 - Swagger UI: [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
+- Live Demo: [https://cineticket.onrender.com](https://cineticket.onrender.com)
 
 ### Default Credentials
 
@@ -497,6 +532,8 @@ The API implements several security features:
 - **Rate Limiting**: Protection against API abuse (100 requests per minute)
 - **Concurrent Access Control**: Pessimistic locking for seat reservations
 - **Transactional Operations**: Ensuring data integrity
+- **Secure Payments**: Integration with Stripe for secure payment processing
+- **Environment Variables**: Sensitive credentials managed through environment variables
 
 ### Authentication Flow
 
@@ -515,8 +552,9 @@ Authorization: Bearer eyJhbGciOiJIUzUxMiJ9...
 
 ### API Documentation
 
-- **Swagger UI**: [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
-- **OpenAPI Spec**: [http://localhost:8080/api-docs](http://localhost:8080/api-docs)
+- **Swagger UI**: [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html) (local)
+- **Swagger UI**: [https://cineticket.onrender.com/swagger-ui/index.html](https://cineticket.onrender.com/swagger-ui/index.html) (production)
+- **OpenAPI Spec**: [https://cineticket.onrender.com/api-docs](https://cineticket.onrender.com/api-docs)
 
 ### Postman Collection
 
@@ -563,7 +601,7 @@ All API responses follow a consistent format:
   "success": true,
   "message": "operation.success.message",
   "data": {
-    
+
   }
 }
 ```
@@ -577,6 +615,27 @@ Contributions are welcome! Here's how you can contribute:
 3. Commit your changes: `git commit -m 'Add some amazing feature'`
 4. Push to the branch: `git push origin feature/amazing-feature`
 5. Open a Pull Request
+
+## 🌟 Key Features
+
+### Payment Processing
+
+- **Stripe Integration**: Secure payment processing for movie ticket reservations
+- **Checkout Sessions**: Streamlined payment flow with Stripe Checkout
+- **Webhook Handling**: Automatic payment status updates via Stripe webhooks
+- **Receipt Generation**: Automatic PDF receipt generation after successful payment
+
+### Email Notifications
+
+- **Confirmation Emails**: Automated emails sent after successful reservations
+- **PDF Attachments**: Receipts attached to confirmation emails
+- **Branded Templates**: Professional HTML email templates
+
+### Reservation Management
+
+- **Seat Selection**: Interactive seat selection for showtimes
+- **Reservation Status**: Track reservation status (confirmed, paid, canceled)
+- **Concurrent Booking Protection**: Prevents double-booking of seats
 
 ## 👨‍💻 Contact
 

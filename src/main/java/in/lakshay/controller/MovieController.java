@@ -53,12 +53,31 @@ public class MovieController {
     @GetMapping
     public ResponseEntity<?> getMovies(
             @PageableDefault(page = 0, size = 10, sort = "title", direction = Sort.Direction.ASC) Pageable pageable,
-            @RequestParam(required = false) String search) {
-        log.info("Fetching movies with pageable: {}, search: {}", pageable, search);
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String genre,
+            @RequestParam(required = false) String year) {
+        log.info("Fetching movies with pageable: {}, search: {}, genre: {}, year: {}", pageable, search, genre, year);
 
-        Page<MovieDTO> movies = (search != null && !search.isEmpty())
-                ? movieService.findByTitleOrGenreContainingIgnoreCase(search, pageable)
-                : movieService.findAllWithReviews(pageable);
+        Page<MovieDTO> movies;
+
+        if ((genre != null && !genre.isEmpty()) || (year != null && !year.isEmpty())) {
+            // If genre or year filters are provided, use them
+            Integer releaseYear = null;
+            if (year != null && !year.isEmpty()) {
+                try {
+                    releaseYear = Integer.parseInt(year);
+                } catch (NumberFormatException e) {
+                    log.warn("Invalid year format: {}", year);
+                }
+            }
+            movies = movieService.findMoviesWithFilters(search, genre, releaseYear, pageable);
+        } else if (search != null && !search.isEmpty()) {
+            // If only search is provided
+            movies = movieService.findByTitleOrGenreContainingIgnoreCase(search, pageable);
+        } else {
+            // No filters, return all movies
+            movies = movieService.findAllWithReviews(pageable);
+        }
 
         return ResponseEntity.ok(new ApiResponse<>(
                 true,

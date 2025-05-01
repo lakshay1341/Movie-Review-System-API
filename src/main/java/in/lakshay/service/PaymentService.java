@@ -1,5 +1,6 @@
 package in.lakshay.service;
 
+import com.itextpdf.text.DocumentException;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Event;
@@ -13,6 +14,7 @@ import in.lakshay.entity.Reservation;
 import in.lakshay.exception.ResourceNotFoundException;
 import in.lakshay.repo.PaymentRepository;
 import in.lakshay.repo.ReservationRepository;
+import jakarta.mail.MessagingException;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.modelmapper.ModelMapper;
@@ -36,6 +38,12 @@ public class PaymentService {
 
     @Autowired
     private ModelMapper modelMapper;
+
+    @Autowired
+    private PdfService pdfService;
+
+    @Autowired
+    private EmailService emailService;
 
     @Value("${stripe.api.key}")
     private String stripeApiKey;
@@ -288,6 +296,9 @@ public class PaymentService {
                 payment.setUpdatedAt(LocalDateTime.now());
                 paymentRepository.save(payment);
 
+                // Generate and send receipt
+                generateAndSendReceipt(payment);
+
                 log.info("Payment status updated to SUCCEEDED and reservation marked as paid for ID: {}", reservationId);
             } else {
                 log.warn("No payment found for reservation ID: {}", reservationId);
@@ -319,5 +330,33 @@ public class PaymentService {
         PaymentDTO paymentDTO = modelMapper.map(payment, PaymentDTO.class);
         paymentDTO.setReservationId(payment.getReservation().getId());
         return paymentDTO;
+    }
+
+    /**
+     * Generates a PDF receipt and sends it via email
+     */
+    @Transactional
+    public void generateAndSendReceipt(Payment payment) {
+        log.info("Generating and sending receipt for payment ID: {}", payment.getId());
+
+        try {
+            // Generate PDF receipt
+            String pdfPath = pdfService.generateReceipt(payment);
+
+            // Update payment with PDF receipt path
+            payment.setPdfReceiptPath(pdfPath);
+            paymentRepository.save(payment);
+
+            // Send email with receipt
+            emailService.sendReceiptEmail(payment, pdfPath);
+
+            log.info("Receipt generated and sent successfully for payment ID: {}", payment.getId());
+        } catch (DocumentException e) {
+            log.error("Error generating PDF receipt: {}", e.getMessage(), e);
+        } catch (MessagingException e) {
+            log.error("Error sending receipt email: {}", e.getMessage(), e);
+        } catch (Exception e) {
+            log.error("Unexpected error in receipt generation/sending: {}", e.getMessage(), e);
+        }
     }
 }

@@ -7,6 +7,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 import java.util.Collections;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class UserPrincipal implements UserDetails {
 	private User user;
 
@@ -21,7 +24,11 @@ public class UserPrincipal implements UserDetails {
 
 	@Override
 	public String getPassword() {
-		return user.getPassword();
+		String password = user.getPassword();
+		log.debug("UserPrincipal.getPassword() for user {}: password format is {}",
+			user.getUserName(),
+			password.startsWith("{bcrypt}") ? "Has {bcrypt} prefix" : "Missing {bcrypt} prefix");
+		return password;
 	}
 
 	@Override

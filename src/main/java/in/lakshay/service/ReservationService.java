@@ -3,6 +3,7 @@ package in.lakshay.service;
 import in.lakshay.dto.MasterDataDTO;
 import in.lakshay.dto.ReservationDTO;
 import in.lakshay.dto.SeatDTO;
+import in.lakshay.dto.ShowtimeDTO;
 import in.lakshay.entity.Payment;
 import in.lakshay.entity.Reservation;
 import in.lakshay.entity.Seat;
@@ -68,11 +69,27 @@ public class ReservationService {
     }
 
     public List<ReservationDTO> getUpcomingReservationsByUser(String username) {
-        log.info("Fetching upcoming reservations for user: {}", username);
+        LocalDate currentDate = LocalDate.now();
+        LocalTime currentTime = LocalTime.now();
+        log.info("Fetching upcoming reservations for user: {} with current date: {} and time: {}", username, currentDate, currentTime);
+
         User user = userRepository.findByUserName(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
 
-        return reservationRepository.findUpcomingReservationsByUser(user.getId(), LocalDate.now()).stream()
+        List<Reservation> upcomingReservations = reservationRepository.findUpcomingReservationsByUser(user.getId(), currentDate, currentTime);
+        log.info("Found {} upcoming reservations for user: {}", upcomingReservations.size(), username);
+
+        // Log each reservation's details
+        upcomingReservations.forEach(reservation -> {
+            Showtime showtime = reservation.getShowtime();
+            log.info("Reservation ID: {}, Showtime Date: {}, Showtime Time: {}, Movie: {}",
+                    reservation.getId(),
+                    showtime.getShowDate(),
+                    showtime.getShowTime(),
+                    showtime.getMovie() != null ? showtime.getMovie().getTitle() : "Unknown");
+        });
+
+        return upcomingReservations.stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
@@ -84,15 +101,44 @@ public class ReservationService {
         return mapToDTO(reservation);
     }
 
+    /**
+     * Get all reservations with pagination
+     * This method was previously named getAllConfirmedReservations but now returns all reservations
+     * regardless of status to support the admin dashboard
+     */
     public Page<ReservationDTO> getAllConfirmedReservations(Pageable pageable) {
-        log.info("Fetching all confirmed reservations with pagination");
-        return reservationRepository.findAllConfirmedReservations(pageable)
+        log.info("Fetching all reservations with pagination");
+        return reservationRepository.findAll(pageable)
                 .map(this::mapToDTO);
     }
 
     public Double calculateRevenueForDateRange(LocalDate startDate, LocalDate endDate) {
         log.info("Calculating revenue for date range: {} to {}", startDate, endDate);
         return reservationRepository.calculateRevenueForDateRange(startDate, endDate);
+    }
+
+    /**
+     * Count reservations for a date range
+     */
+    public Long countReservationsForDateRange(LocalDateTime startDateTime, LocalDateTime endDateTime) {
+        log.info("Counting reservations for date range: {} to {}", startDateTime, endDateTime);
+        return reservationRepository.countByReservationTimeBetween(startDateTime, endDateTime);
+    }
+
+    /**
+     * Count confirmed reservations for a date range
+     */
+    public Long countConfirmedReservationsForDateRange(LocalDateTime startDateTime, LocalDateTime endDateTime) {
+        log.info("Counting confirmed reservations for date range: {} to {}", startDateTime, endDateTime);
+        return reservationRepository.countByReservationTimeBetweenAndStatusId(startDateTime, endDateTime, 1); // 1 = CONFIRMED
+    }
+
+    /**
+     * Count canceled reservations for a date range
+     */
+    public Long countCanceledReservationsForDateRange(LocalDateTime startDateTime, LocalDateTime endDateTime) {
+        log.info("Counting canceled reservations for date range: {} to {}", startDateTime, endDateTime);
+        return reservationRepository.countByReservationTimeBetweenAndStatusId(startDateTime, endDateTime, 3); // 3 = CANCELED
     }
 
     /**
@@ -294,8 +340,21 @@ public class ReservationService {
             MasterDataDTO statusData = masterDataService.getMasterDataByComponentTypeNameAndMasterDataId("RESERVATION_STATUS", reservation.getStatusId());
             dto.setStatusValue(statusData.getValue());
         } catch (Exception e) {
-            log.warn("Could not find status value for status ID: {}", reservation.getStatusId());
-            dto.setStatusValue("Unknown");
+            log.warn("Could not find status value for status ID: {}, Error: {}", reservation.getStatusId(), e.getMessage());
+            // Set a default status value based on the status ID
+            switch (reservation.getStatusId()) {
+                case 1:
+                    dto.setStatusValue("CONFIRMED");
+                    break;
+                case 2:
+                    dto.setStatusValue("PAID");
+                    break;
+                case 3:
+                    dto.setStatusValue("CANCELED");
+                    break;
+                default:
+                    dto.setStatusValue("Unknown");
+            }
         }
 
         if (reservation.getUser() != null) {
@@ -316,6 +375,30 @@ public class ReservationService {
 
             dto.setShowDate(showtime.getShowDate().format(DATE_FORMATTER));
             dto.setShowTime(showtime.getShowTime().format(TIME_FORMATTER));
+
+            // Create and set ShowtimeDTO
+            ShowtimeDTO showtimeDTO = new ShowtimeDTO();
+            showtimeDTO.setId(showtime.getId());
+            showtimeDTO.setShowDate(showtime.getShowDate());
+            showtimeDTO.setShowTime(showtime.getShowTime());
+            showtimeDTO.setTotalSeats(showtime.getTotalSeats());
+            showtimeDTO.setAvailableSeats(showtime.getAvailableSeats());
+            showtimeDTO.setPrice(showtime.getPrice());
+
+            // Include movie and theater data if available
+            if (showtime.getMovie() != null) {
+                showtimeDTO.setMovieId(showtime.getMovie().getId());
+                showtimeDTO.setMovieTitle(showtime.getMovie().getTitle());
+                showtimeDTO.setMoviePosterUrl(showtime.getMovie().getPosterImageUrl());
+            }
+
+            if (showtime.getTheater() != null) {
+                showtimeDTO.setTheaterId(showtime.getTheater().getId());
+                showtimeDTO.setTheaterName(showtime.getTheater().getName());
+                showtimeDTO.setTheaterLocation(showtime.getTheater().getLocation());
+            }
+
+            dto.setShowtime(showtimeDTO);
         }
 
         List<SeatDTO> seatDTOs = reservation.getSeats().stream()

@@ -32,6 +32,13 @@ public class MovieService {
     }
 
     @Transactional(readOnly = true)
+    public Page<MovieDTO> findMoviesWithFilters(String search, String genre, Integer releaseYear, Pageable pageable) {
+        log.info("Filtering movies with search: {}, genre: {}, releaseYear: {}", search, genre, releaseYear);
+        return movieRepository.findMoviesWithFilters(search, genre, releaseYear, pageable)
+                .map(movie -> modelMapper.map(movie, MovieDTO.class));
+    }
+
+    @Transactional(readOnly = true)
     public Page<MovieDTO> findAllWithReviews(Pageable pageable) {
         log.info("Fetching all movies with reviews");
         return movieRepository.findAllWithReviews(pageable)

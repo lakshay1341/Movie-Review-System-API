@@ -19,4 +19,5 @@ public class PaymentDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private String receiptUrl;
+    private String pdfReceiptPath;
 }
