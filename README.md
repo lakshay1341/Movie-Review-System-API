@@ -616,6 +616,7 @@ Contributions are welcome! Here's how you can contribute:
 4. Push to the branch: `git push origin feature/amazing-feature`
 5. Open a Pull Request
 
+
 ## 🌟 Key Features
 
 ### Payment Processing
@@ -636,6 +637,9 @@ Contributions are welcome! Here's how you can contribute:
 - **Seat Selection**: Interactive seat selection for showtimes
 - **Reservation Status**: Track reservation status (confirmed, paid, canceled)
 - **Concurrent Booking Protection**: Prevents double-booking of seats
+
+🎬 Problem Statement: [roadmap.sh](https://roadmap.sh/projects/movie-reservation-system/solutions?u=658efb1fae22c12523f4de17)
+
 
 ## 👨‍💻 Contact
 
