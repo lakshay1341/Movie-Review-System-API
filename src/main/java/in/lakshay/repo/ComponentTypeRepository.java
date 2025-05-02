@@ -6,7 +6,9 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
+// repo for component types (used for master data/lookup values)
 @Repository
 public interface ComponentTypeRepository extends JpaRepository<ComponentType, Integer> {
-    Optional<ComponentType> findByName(String name);
+    // find component type by name
+    Optional<ComponentType> findByName(String name); // for lookups
 }

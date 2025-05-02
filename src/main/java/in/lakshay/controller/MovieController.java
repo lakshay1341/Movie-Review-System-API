@@ -36,20 +36,22 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.Map;
 
+// handles all the movie stuff - CRUD operations, poster uploads, etc
+
 @RestController
-@RequestMapping("/api/v1/movies")
-@Slf4j
+@RequestMapping("/api/v1/movies") // base path for all movie endpoints
+@Slf4j // for logging
 public class MovieController {
-    @Autowired
+    @Autowired // todo: switch to constructor injection someday when i have time
     private MovieService movieService;
 
     @Autowired
-    private S3BucketService s3BucketService;
+    private S3BucketService s3BucketService; // handles s3 stuff for posters
 
     @Autowired
-    private MessageSource messageSource;
+    private MessageSource messageSource; // for i18n
 
-    @RateLimiter(name = "basic")
+    @RateLimiter(name = "basic") // prevent abuse from bots
     @GetMapping
     public ResponseEntity<?> getMovies(
             @PageableDefault(page = 0, size = 10, sort = "title", direction = Sort.Direction.ASC) Pageable pageable,
@@ -60,6 +62,8 @@ public class MovieController {
 
         Page<MovieDTO> movies;
 
+        // this logic is a bit messy but it works fine
+        // might refactor later if we have time
         if ((genre != null && !genre.isEmpty()) || (year != null && !year.isEmpty())) {
             // If genre or year filters are provided, use them
             Integer releaseYear = null;
@@ -67,7 +71,7 @@ public class MovieController {
                 try {
                     releaseYear = Integer.parseInt(year);
                 } catch (NumberFormatException e) {
-                    log.warn("Invalid year format: {}", year);
+                    log.warn("Invalid year format: {}", year); // users always mess this up lol
                 }
             }
             movies = movieService.findMoviesWithFilters(search, genre, releaseYear, pageable);
@@ -75,8 +79,8 @@ public class MovieController {
             // If only search is provided
             movies = movieService.findByTitleOrGenreContainingIgnoreCase(search, pageable);
         } else {
-            // No filters, return all movies
-            movies = movieService.findAllWithReviews(pageable);
+            // No filters, just return all movies
+            movies = movieService.findAllWithReviews(pageable); // includes review data too
         }
 
         return ResponseEntity.ok(new ApiResponse<>(
@@ -86,9 +90,10 @@ public class MovieController {
         ));
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{id}") // get a single movie by id
     public ResponseEntity<?> getMovieById(@PathVariable Long id) {
         log.info("Fetching movie with id: {}", id);
+        // this will throw 404 if movie not found
         MovieDTO movie = movieService.getMovieById(id);
         return ResponseEntity.ok(new ApiResponse<>(
                 true,
@@ -98,7 +103,7 @@ public class MovieController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_ADMIN')") // admin only
     public ResponseEntity<?> addMovie(@Valid @RequestBody MovieRequest movieRequest) {
         try {
             log.info("Adding new movie: {}", movieRequest.getTitle());
@@ -107,7 +112,7 @@ public class MovieController {
             movie.setGenre(movieRequest.getGenre());
             movie.setReleaseYear(movieRequest.getReleaseYear());
             movie.setDescription(movieRequest.getDescription());
-            movie.setPosterImageUrl(movieRequest.getPosterImageUrl());
+            movie.setPosterImageUrl(movieRequest.getPosterImageUrl()); // might be null, thats ok
 
             MovieDTO savedMovie = movieService.addMovie(movie);
             return ResponseEntity.status(HttpStatus.CREATED)
@@ -121,6 +126,7 @@ public class MovieController {
                             savedMovie
                     ));
         } catch (ValidationException e) {
+            // something went wrong with validation
             return ResponseEntity.badRequest()
                     .body(new ApiResponse<>(
                             false,
@@ -135,7 +141,7 @@ public class MovieController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_ADMIN')") // admin only
     public ResponseEntity<?> updateMovie(@PathVariable Long id, @Valid @RequestBody MovieRequest movieRequest) {
         try {
             log.info("Updating movie with id: {}", id);
@@ -146,6 +152,7 @@ public class MovieController {
             movie.setDescription(movieRequest.getDescription());
             movie.setPosterImageUrl(movieRequest.getPosterImageUrl());
 
+            // this will throw 404 if movie not found
             MovieDTO updatedMovie = movieService.updateMovie(id, movie);
             return ResponseEntity.ok(new ApiResponse<>(
                     true,
@@ -153,6 +160,7 @@ public class MovieController {
                     updatedMovie
             ));
         } catch (ValidationException e) {
+            // validation failed
             return ResponseEntity.badRequest()
                     .body(new ApiResponse<>(
                             false,
@@ -174,15 +182,10 @@ public class MovieController {
         ));
     }
 
-    /**
-     * Upload a poster for a movie and update the movie with the poster URL.
-     *
-     * @param id   The ID of the movie
-     * @param file The poster file to upload
-     * @return Information about the uploaded file and updated movie
-     */
+    // uploads a poster image for a movie and updates the movie record
+    // returns the updated movie info + upload details
     @PostMapping(value = "/{id}/poster", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_ADMIN')") // admin only
     public ResponseEntity<?> uploadMoviePoster(
             @PathVariable Long id,
             @RequestParam("file") MultipartFile file) {
@@ -190,7 +193,7 @@ public class MovieController {
         try {
             log.info("Uploading poster for movie ID: {}", id);
 
-            // Check if movie exists
+            // Check if movie exists - will throw 404 if not found
             MovieDTO movie = movieService.getMovieById(id);
 
             if (file.isEmpty()) {
@@ -198,22 +201,23 @@ public class MovieController {
                         .body(new ApiResponse<>(false, "poster.upload.empty", null));
             }
 
-            // Upload poster to S3
+            // Upload poster to S3 bucket
             Map<String, Object> uploadResult = s3BucketService.uploadPoster(file, id);
-            String posterUrl = (String) uploadResult.get("fileUrl");
+            String posterUrl = (String) uploadResult.get("fileUrl"); // the public url
 
-            // Update movie with poster URL
+            // Update movie with poster URL - kinda verbose but works
+            // TODO: refactor this someday, too much boilerplate
             Movie movieDetails = new Movie();
             movieDetails.setTitle(movie.getTitle());
             movieDetails.setGenre(movie.getGenre());
             movieDetails.setReleaseYear(movie.getReleaseYear());
             movieDetails.setDescription(movie.getDescription());
-            movieDetails.setPosterImageUrl(posterUrl);
+            movieDetails.setPosterImageUrl(posterUrl); // set the new url
 
             MovieDTO updatedMovie = movieService.updateMovie(id, movieDetails);
 
-            // Combine results
-            uploadResult.put("movie", updatedMovie);
+            // Combine results for response
+            uploadResult.put("movie", updatedMovie); // add movie to result
 
             return ResponseEntity.ok()
                     .body(new ApiResponse<>(true, "poster.upload.success", uploadResult));
@@ -223,5 +227,5 @@ public class MovieController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse<>(false, "poster.upload.error", e.getMessage()));
         }
-    }
+    } // end of uploadMoviePoster
 }

@@ -4,15 +4,17 @@ import lombok.*;
 
 import java.util.List;
 
-@Data
+// movie data for frontend
+@Data // lombok ftw
 @AllArgsConstructor
-@NoArgsConstructor
+@NoArgsConstructor // jackson needs this
 public class MovieDTO {
     private Long id;
     private String title;
-    private String genre;
-    private int releaseYear;
-    private String description;
-    private String posterImageUrl;
-    private List<ReviewDTO> reviews;
+    private String genre; // comma-sep for multiple genres
+    private int releaseYear; // just year (2023 etc)
+    private String description; // plot summary etc
+    private String posterImageUrl; // s3 bucket url
+
+    private List<ReviewDTO> reviews; // null if no reviews yet
 }

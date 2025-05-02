@@ -8,20 +8,23 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Map;
 
+// runs at startup to check if db is properly setup
 @Component
 public class DatabaseChecker implements CommandLineRunner {
 
-    @Autowired
+    @Autowired // todo: switch to constructor injection someday
     private JdbcTemplate jdbcTemplate;
 
     @Override
     public void run(String... args) throws Exception {
+        // print all tables first
         System.out.println("\n\n=== DATABASE TABLES ===");
         List<Map<String, Object>> tables = jdbcTemplate.queryForList("SHOW TABLES");
         tables.forEach(table -> {
             System.out.println(table.values().iterator().next());
         });
 
+        // check roles
         System.out.println("\n=== ROLES TABLE ===");
         try {
             List<Map<String, Object>> roles = jdbcTemplate.queryForList("SELECT * FROM roles");
@@ -34,6 +37,7 @@ public class DatabaseChecker implements CommandLineRunner {
             System.out.println("Error querying roles table: " + e.getMessage());
         }
 
+        // check users
         System.out.println("\n=== USERS TABLE ===");
         try {
             List<Map<String, Object>> users = jdbcTemplate.queryForList("SELECT * FROM users");
@@ -46,6 +50,7 @@ public class DatabaseChecker implements CommandLineRunner {
             System.out.println("Error querying users table: " + e.getMessage());
         }
 
+        // check movies - just print count cuz there might be lots
         System.out.println("\n=== MOVIES TABLE ===");
         try {
             List<Map<String, Object>> movies = jdbcTemplate.queryForList("SELECT * FROM movies");
@@ -58,6 +63,7 @@ public class DatabaseChecker implements CommandLineRunner {
             System.out.println("Error querying movies table: " + e.getMessage());
         }
 
+        // check theaters
         System.out.println("\n=== THEATERS TABLE ===");
         try {
             List<Map<String, Object>> theaters = jdbcTemplate.queryForList("SELECT * FROM theaters");
@@ -70,6 +76,7 @@ public class DatabaseChecker implements CommandLineRunner {
             System.out.println("Error querying theaters table: " + e.getMessage());
         }
 
+        // check showtimes - just count
         System.out.println("\n=== SHOWTIMES TABLE ===");
         try {
             List<Map<String, Object>> showtimes = jdbcTemplate.queryForList("SELECT * FROM showtimes");
@@ -81,7 +88,8 @@ public class DatabaseChecker implements CommandLineRunner {
         } catch (Exception e) {
             System.out.println("Error querying showtimes table: " + e.getMessage());
         }
-        
+
+        // all done!
         System.out.println("\n=== DATABASE CHECK COMPLETE ===\n\n");
     }
 }

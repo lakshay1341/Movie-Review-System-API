@@ -22,22 +22,24 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping(Constants.THEATERS_PATH)
-@Slf4j
-@Tag(name = "Theaters", description = "Theater management APIs")
+@RequestMapping(Constants.THEATERS_PATH) // /api/v1/theaters
+@Slf4j // logging
+@Tag(name = "Theaters", description = "Theater management APIs") // swagger docs
 public class TheaterController {
-    @Autowired
-    private TheaterService theaterService;
+    @Autowired // TODO: switch to constructor injection
+    private TheaterService theaterService; // handles theater business logic
 
     @Autowired
-    private MessageSource messageSource;
+    private MessageSource messageSource; // i18n
 
-    @RateLimiter(name = "basic")
-    @GetMapping
+    @RateLimiter(name = "basic") // prevent abuse
+    @GetMapping // get all theaters
     @Operation(summary = "Get all theaters", description = "Returns a list of all theaters")
     public ResponseEntity<ApiResponse<List<TheaterDTO>>> getAllTheaters() {
         log.info("Fetching all theaters");
+        // get all theaters from db
         List<TheaterDTO> theaters = theaterService.getAllTheaters();
+
         return ResponseEntity.ok(new ApiResponse<>(
                 true,
                 messageSource.getMessage("theaters.retrieved.success", null, LocaleContextHolder.getLocale()),
@@ -46,11 +48,13 @@ public class TheaterController {
     }
 
     @RateLimiter(name = "basic")
-    @GetMapping("/{id}")
+    @GetMapping("/{id}") // get theater by id
     @Operation(summary = "Get theater by ID", description = "Returns a theater by its ID")
     public ResponseEntity<ApiResponse<TheaterDTO>> getTheaterById(@PathVariable Long id) {
         log.info("Fetching theater with id: {}", id);
+        // will throw 404 if not found
         TheaterDTO theater = theaterService.getTheaterById(id);
+
         return ResponseEntity.ok(new ApiResponse<>(
                 true,
                 messageSource.getMessage("theater.retrieved.success", null, LocaleContextHolder.getLocale()),
@@ -71,17 +75,19 @@ public class TheaterController {
         ));
     }
 
-    @PostMapping
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PostMapping // create new theater
+    @PreAuthorize("hasRole('ROLE_ADMIN')") // admin only
     @Operation(summary = "Add a new theater", description = "Creates a new theater (Admin only)")
     public ResponseEntity<ApiResponse<TheaterDTO>> addTheater(@Valid @RequestBody TheaterRequest theaterRequest) {
         log.info("Adding new theater: {}", theaterRequest.getName());
 
+        // create new theater obj
         Theater theater = new Theater();
         theater.setName(theaterRequest.getName());
         theater.setLocation(theaterRequest.getLocation());
-        theater.setCapacity(theaterRequest.getCapacity());
+        theater.setCapacity(theaterRequest.getCapacity()); // num of seats
 
+        // save to db
         TheaterDTO savedTheater = theaterService.addTheater(theater);
 
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -92,19 +98,21 @@ public class TheaterController {
                 ));
     }
 
-    @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PutMapping("/{id}") // update existing theater
+    @PreAuthorize("hasRole('ROLE_ADMIN')") // admin only
     @Operation(summary = "Update a theater", description = "Updates an existing theater (Admin only)")
     public ResponseEntity<ApiResponse<TheaterDTO>> updateTheater(
             @PathVariable Long id,
             @Valid @RequestBody TheaterRequest theaterRequest) {
         log.info("Updating theater with id: {}", id);
 
+        // create theater obj with updated fields
         Theater theater = new Theater();
         theater.setName(theaterRequest.getName());
         theater.setLocation(theaterRequest.getLocation());
-        theater.setCapacity(theaterRequest.getCapacity());
+        theater.setCapacity(theaterRequest.getCapacity()); // be careful changing this if showtimes exist!
 
+        // update in db - will throw 404 if not found
         TheaterDTO updatedTheater = theaterService.updateTheater(id, theater);
 
         return ResponseEntity.ok(new ApiResponse<>(
@@ -114,16 +122,18 @@ public class TheaterController {
         ));
     }
 
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @DeleteMapping("/{id}") // delete theater
+    @PreAuthorize("hasRole('ROLE_ADMIN')") // admin only
     @Operation(summary = "Delete a theater", description = "Deletes an existing theater (Admin only)")
     public ResponseEntity<ApiResponse<Void>> deleteTheater(@PathVariable Long id) {
         log.info("Deleting theater with id: {}", id);
-        theaterService.deleteTheater(id);
+        // this will check if theater has showtimes and fail if it does
+        theaterService.deleteTheater(id); // cascades to related entities
+
         return ResponseEntity.ok(new ApiResponse<>(
                 true,
                 messageSource.getMessage("theater.deleted.success", null, LocaleContextHolder.getLocale()),
                 null
         ));
     }
-}
+} // end of TheaterController

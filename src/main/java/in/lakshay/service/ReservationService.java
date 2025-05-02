@@ -105,36 +105,38 @@ public class ReservationService {
      * Get all reservations with pagination
      * This method was previously named getAllConfirmedReservations but now returns all reservations
      * regardless of status to support the admin dashboard
+     *
+     * TODO: rename this method in the future to avoid confusion
      */
     public Page<ReservationDTO> getAllConfirmedReservations(Pageable pageable) {
         log.info("Fetching all reservations with pagination");
+        // this actually gets ALL reservations, not just confirmed ones! naming is confusing :/
         return reservationRepository.findAll(pageable)
                 .map(this::mapToDTO);
     }
 
     public Double calculateRevenueForDateRange(LocalDate startDate, LocalDate endDate) {
         log.info("Calculating revenue for date range: {} to {}", startDate, endDate);
+        // simple passthrough to repo method
         return reservationRepository.calculateRevenueForDateRange(startDate, endDate);
     }
 
-    /**
-     * Count reservations for a date range
-     */
+
+
+    // counts ALL reservs in date range
     public Long countReservationsForDateRange(LocalDateTime startDateTime, LocalDateTime endDateTime) {
         log.info("Counting reservations for date range: {} to {}", startDateTime, endDateTime);
         return reservationRepository.countByReservationTimeBetween(startDateTime, endDateTime);
     }
 
-    /**
-     * Count confirmed reservations for a date range
-     */
+    // just the confirmed ones (statusId=1)
     public Long countConfirmedReservationsForDateRange(LocalDateTime startDateTime, LocalDateTime endDateTime) {
         log.info("Counting confirmed reservations for date range: {} to {}", startDateTime, endDateTime);
         return reservationRepository.countByReservationTimeBetweenAndStatusId(startDateTime, endDateTime, 1); // 1 = CONFIRMED
     }
 
-    /**
-     * Count canceled reservations for a date range
+    /*
+     * gets canceled ones - statusId 3
      */
     public Long countCanceledReservationsForDateRange(LocalDateTime startDateTime, LocalDateTime endDateTime) {
         log.info("Counting canceled reservations for date range: {} to {}", startDateTime, endDateTime);
@@ -172,6 +174,7 @@ public class ReservationService {
         // Check if showtime is in the past
         if (showtime.getShowDate().isBefore(LocalDate.now()) ||
             (showtime.getShowDate().isEqual(LocalDate.now()) && showtime.getShowTime().isBefore(LocalTime.now()))) {
+            // can't book time machines yet lol
             throw new IllegalStateException("Cannot reserve seats for past showtimes");
         }
 
@@ -181,6 +184,7 @@ public class ReservationService {
         }
 
         // Get seats with pessimistic lock to prevent concurrent reservations
+        // this is super important!! otherwise we could double-book seats
         List<Seat> seats = seatRepository.findByIdInAndShowtimeIdWithLock(seatIds, showtimeId);
 
         // Validate seats
@@ -222,6 +226,7 @@ public class ReservationService {
         reservation.setShowtime(showtime);
         reservation.setReservationTime(LocalDateTime.now());
         reservation.setStatusId(1); // 1 = CONFIRMED
+        // calc total price based on # of seats
         reservation.setTotalPrice(showtime.getPrice() * seats.size());
 
         Reservation savedReservation = reservationRepository.save(reservation);
@@ -280,6 +285,7 @@ public class ReservationService {
         return mapToDTO(updatedReservation);
     }
 
+    // quick helper to check if user has specific role
     private boolean hasRole(String username, String roleName) {
         return userRepository.findByUserName(username)
                 .map(user -> user.getRole().getName().equals(roleName))
@@ -287,6 +293,7 @@ public class ReservationService {
     }
 
 
+    // bunch of filter methods below...
 
     /**
      * Get reservations for a user filtered by payment status
@@ -342,6 +349,7 @@ public class ReservationService {
         } catch (Exception e) {
             log.warn("Could not find status value for status ID: {}, Error: {}", reservation.getStatusId(), e.getMessage());
             // Set a default status value based on the status ID
+            // hardcoded fallback in case masterdata service fails
             switch (reservation.getStatusId()) {
                 case 1:
                     dto.setStatusValue("CONFIRMED");
@@ -353,7 +361,7 @@ public class ReservationService {
                     dto.setStatusValue("CANCELED");
                     break;
                 default:
-                    dto.setStatusValue("Unknown");
+                    dto.setStatusValue("Unknown"); // shouldn't happen but who knows
             }
         }
 
@@ -379,11 +387,11 @@ public class ReservationService {
             // Create and set ShowtimeDTO
             ShowtimeDTO showtimeDTO = new ShowtimeDTO();
             showtimeDTO.setId(showtime.getId());
-            showtimeDTO.setShowDate(showtime.getShowDate());
-            showtimeDTO.setShowTime(showtime.getShowTime());
+            showtimeDTO.setShowDate(showtime.getShowDate()); // date obj
+            showtimeDTO.setShowTime(showtime.getShowTime()); // time obj
             showtimeDTO.setTotalSeats(showtime.getTotalSeats());
             showtimeDTO.setAvailableSeats(showtime.getAvailableSeats());
-            showtimeDTO.setPrice(showtime.getPrice());
+            showtimeDTO.setPrice(showtime.getPrice()); // in $
 
             // Include movie and theater data if available
             if (showtime.getMovie() != null) {

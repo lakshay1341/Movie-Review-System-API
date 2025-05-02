@@ -28,30 +28,32 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.stream.Collectors; // needed for joining strings in logs
 
 @RestController
-@RequestMapping(Constants.RESERVATIONS_PATH)
-@Slf4j
-@Tag(name = "Reservations", description = "Reservation management APIs")
+@RequestMapping(Constants.RESERVATIONS_PATH) // /api/v1/reservations
+@Slf4j // for logging stuff
+@Tag(name = "Reservations", description = "Reservation management APIs") // swagger docs
 public class ReservationController {
-    @Autowired
-    private ReservationService reservationService;
+    @Autowired // todo: switch to constructor injection someday when I have time
+    private ReservationService reservationService; // handles business logic
 
     @Autowired
-    private MessageSource messageSource;
+    private MessageSource messageSource; // for i18n messages
 
-    @RateLimiter(name = "basic")
+    @RateLimiter(name = "basic") // prevent abuse from bots
     @GetMapping("/my-reservations")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("isAuthenticated()") // user must be logged in
     @Operation(summary = "Get user's reservations", description = "Returns all reservations for the authenticated user")
     public ResponseEntity<ApiResponse<List<ReservationDTO>>> getMyReservations(
-            @RequestParam(required = false) Boolean paid,
-            @RequestParam(required = false) Integer statusId) {
+            @RequestParam(required = false) Boolean paid, // filter by payment status
+            @RequestParam(required = false) Integer statusId) { // filter by reservation status
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         log.info("Fetching reservations for user: {} with paid filter: {} and status filter: {}", username, paid, statusId);
         List<ReservationDTO> reservations;
 
+        // lots of if/else but it's the clearest way to handle the filters
+        // could refactor this later but works fine for now
         if (paid != null && statusId != null) {
             // Filter by both payment status and reservation status
             reservations = reservationService.getReservationsByUserAndPaymentStatusAndStatusId(username, paid, statusId);
@@ -62,7 +64,7 @@ public class ReservationController {
             // Filter by reservation status only
             reservations = reservationService.getReservationsByUserAndStatusId(username, statusId);
         } else {
-            // Get all reservations
+            // Get all reservations - no filters applied
             reservations = reservationService.getReservationsByUser(username);
         }
 
@@ -74,23 +76,25 @@ public class ReservationController {
     }
 
     @RateLimiter(name = "basic")
-    @GetMapping("/my-upcoming-reservations")
+    @GetMapping("/my-upcoming-reservations") // only future shows
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get user's upcoming reservations", description = "Returns upcoming reservations for the authenticated user")
     public ResponseEntity<ApiResponse<List<ReservationDTO>>> getMyUpcomingReservations() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         log.info("API call: Fetching upcoming reservations for user: {}", username);
 
+        // get reservations for future showtimes only
         List<ReservationDTO> reservations = reservationService.getUpcomingReservationsByUser(username);
         log.info("Returning {} upcoming reservations for user: {}", reservations.size(), username);
 
-        // Log the IDs of the reservations being returned
+        // Log the IDs of the reservations being returned - helps with debugging
+        // this is super useful when users report issues
         if (!reservations.isEmpty()) {
             String reservationIds = reservations.stream()
-                    .map(r -> String.valueOf(r.getId()))
-                    .collect(Collectors.joining(", "));
+                    .map(r -> String.valueOf(r.getId())) // convert Long to String
+                    .collect(Collectors.joining(", ")); // comma-separated list
             log.info("Upcoming reservation IDs for user {}: {}", username, reservationIds);
-        }
+        } // empty list is fine, just means no upcoming shows
 
         return ResponseEntity.ok(new ApiResponse<>(
                 true,
@@ -106,13 +110,15 @@ public class ReservationController {
     public ResponseEntity<ApiResponse<ReservationDTO>> getReservationById(@PathVariable Long id) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
+        // check if user is admin - they can see any reservation
         boolean isAdmin = auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
 
         log.info("Fetching reservation with id: {} for user: {}", id, username);
-        ReservationDTO reservation = reservationService.getReservationById(id);
+        ReservationDTO reservation = reservationService.getReservationById(id); // might throw 404
 
         // Check if user is authorized to view this reservation
+        // users can only see their own reservations unless they're admin
         if (!isAdmin && !reservation.getUsername().equals(username)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new ApiResponse<>(
@@ -145,8 +151,8 @@ public class ReservationController {
     }
 
     @RateLimiter(name = "basic")
-    @GetMapping("/reports/revenue")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @GetMapping("/reports/revenue") // admin report endpoint
+    @PreAuthorize("hasRole('ROLE_ADMIN')") // admins only!!!
     @Operation(summary = "Get revenue report", description = "Returns revenue for a date range (Admin only)")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getRevenueReport(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
@@ -154,20 +160,22 @@ public class ReservationController {
         log.info("Calculating revenue for date range: {} to {}", startDate, endDate);
         Double revenue = reservationService.calculateRevenueForDateRange(startDate, endDate);
 
+        // build response with all the data frontend needs
+        // could add more metrics here later
         Map<String, Object> report = new HashMap<>();
         report.put("startDate", startDate);
         report.put("endDate", endDate);
-        report.put("revenue", revenue != null ? revenue : 0.0);
+        report.put("revenue", revenue != null ? revenue : 0.0); // default to 0 if null
 
         return ResponseEntity.ok(new ApiResponse<>(
                 true,
                 messageSource.getMessage("revenue.report.success", null, LocaleContextHolder.getLocale()),
                 report
-        ));
+        )); // success!
     }
 
-    @PostMapping
-    @PreAuthorize("isAuthenticated()")
+    @PostMapping // create new reservation
+    @PreAuthorize("isAuthenticated()") // must be logged in
     @Operation(summary = "Create a reservation", description = "Creates a new reservation for the authenticated user (payment required to complete)")
     public ResponseEntity<ApiResponse<ReservationDTO>> createReservation(
             @Valid @RequestBody ReservationRequest reservationRequest) {
@@ -176,9 +184,12 @@ public class ReservationController {
                 username, reservationRequest.getShowtimeId(), reservationRequest.getSeatIds());
 
         try {
+            // this might fail if seats are already taken - race condition
+            // TODO: maybe add some kind of temporary seat locking mechanism?
             ReservationDTO reservation = reservationService.createReservation(
                     username, reservationRequest.getShowtimeId(), reservationRequest.getSeatIds());
 
+            // 201 Created status
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(new ApiResponse<>(
                             true,
@@ -186,16 +197,18 @@ public class ReservationController {
                             reservation
                     ));
         } catch (RuntimeException e) {
+            // something went wrong - probably seats already taken
+            // or showtime is in the past or something
             return ResponseEntity.badRequest()
                     .body(new ApiResponse<>(
                             false,
-                            e.getMessage(),
+                            e.getMessage(), // pass error msg to client
                             null
                     ));
         }
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id}") // cancel reservation
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Cancel a reservation", description = "Cancels an existing reservation")
     public ResponseEntity<ApiResponse<ReservationDTO>> cancelReservation(@PathVariable Long id) {
@@ -203,6 +216,7 @@ public class ReservationController {
         log.info("Canceling reservation with id: {} for user: {}", id, username);
 
         try {
+            // this will check if user owns the reservation or is admin
             ReservationDTO canceledReservation = reservationService.cancelReservation(id, username);
             return ResponseEntity.ok(new ApiResponse<>(
                     true,
@@ -210,6 +224,8 @@ public class ReservationController {
                     canceledReservation
             ));
         } catch (RuntimeException e) {
+            // something went wrong - maybe reservation already canceled
+            // or showtime already started
             return ResponseEntity.badRequest()
                     .body(new ApiResponse<>(
                             false,
@@ -218,4 +234,4 @@ public class ReservationController {
                     ));
         }
     }
-}
+} // end of ReservationController

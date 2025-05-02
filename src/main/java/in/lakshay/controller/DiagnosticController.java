@@ -22,63 +22,60 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * Diagnostic controller for troubleshooting database issues.
- * These endpoints are admin-only and provide information about the database state.
- */
+// for troubleshooting database issues
+// admin-only endpoints to check db state when things go wrong
 @RestController
-@RequestMapping("/api/v1/diagnostics")
-@Slf4j
+@RequestMapping("/api/v1/diagnostics") // base path for diagnostic endpoints
+@Slf4j // logging
 public class DiagnosticController {
-    
+
+    @Autowired // TODO: switch to constructor injection
+    private UserRepository userRepository; // for user counts
+
     @Autowired
-    private UserRepository userRepository;
-    
+    private ReservationRepository reservationRepository; // for reservation counts
+
     @Autowired
-    private ReservationRepository reservationRepository;
-    
+    private SeatRepository seatRepository; // for seat counts
+
     @Autowired
-    private SeatRepository seatRepository;
-    
+    private ShowtimeRepository showtimeRepository; // for showtime counts
+
     @Autowired
-    private ShowtimeRepository showtimeRepository;
-    
+    private ComponentTypeRepository componentTypeRepository; // for component types
+
     @Autowired
-    private ComponentTypeRepository componentTypeRepository;
-    
-    @Autowired
-    private MasterDataRepository masterDataRepository;
-    
-    /**
-     * Get database diagnostics including entity counts and key data
-     * 
-     * @return A map containing diagnostic information
-     */
+    private MasterDataRepository masterDataRepository; // for master data
+
+    // get database diagnostics including entity counts and key data
+    // useful for checking if db is properly initialized
     @GetMapping("/database")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_ADMIN')") // admin only
     public ResponseEntity<ApiResponse<Map<String, Object>>> getDatabaseDiagnostics() {
         log.info("Fetching database diagnostics");
         Map<String, Object> diagnostics = new HashMap<>();
-        
-        // Count entities
+
+        // Count entities - basic health check
         diagnostics.put("userCount", userRepository.count());
         diagnostics.put("reservationCount", reservationRepository.count());
-        diagnostics.put("seatCount", seatRepository.count());
+        diagnostics.put("seatCount", seatRepository.count()); // should be a lot
         diagnostics.put("showtimeCount", showtimeRepository.count());
-        
-        // Check if admin user exists
+
+        // Check if admin user exists - critical check
         boolean adminExists = userRepository.findByUserName("admin").isPresent();
         diagnostics.put("adminExists", adminExists);
-        
+
         // Check component types and master data
+        // this is important for reservation status codes
         Optional<ComponentType> reservationStatusType = componentTypeRepository.findByName("RESERVATION_STATUS");
         diagnostics.put("reservationStatusTypeExists", reservationStatusType.isPresent());
-        
+
         if (reservationStatusType.isPresent()) {
             List<MasterData> statusValues = masterDataRepository.findByComponentType(reservationStatusType.get());
             diagnostics.put("reservationStatusCount", statusValues.size());
-            
+
             // Log the status values for debugging
+            // helps identify missing statuses
             Map<Integer, String> statusMap = new HashMap<>();
             statusValues.forEach(status -> {
                 statusMap.put(status.getMasterDataId(), status.getValue());
@@ -86,11 +83,11 @@ public class DiagnosticController {
             });
             diagnostics.put("reservationStatuses", statusMap);
         }
-        
+
         return ResponseEntity.ok(new ApiResponse<>(
                 true,
                 "Database diagnostics retrieved successfully",
                 diagnostics
         ));
     }
-}
+} // end of DiagnosticController

@@ -31,29 +31,31 @@ import java.time.LocalDate;
 import java.util.List;
 
 @RestController
-@RequestMapping(Constants.SHOWTIMES_PATH)
-@Slf4j
-@Tag(name = "Showtimes", description = "Showtime management APIs")
+@RequestMapping(Constants.SHOWTIMES_PATH) // /api/v1/showtimes
+@Slf4j // for logging
+@Tag(name = "Showtimes", description = "Showtime management APIs") // swagger docs
 public class ShowtimeController {
-    @Autowired
-    private ShowtimeService showtimeService;
+    @Autowired // TODO: switch to constructor injection
+    private ShowtimeService showtimeService; // handles business logic
 
     @Autowired
-    private MovieRepository movieRepository;
+    private MovieRepository movieRepository; // for movie lookups
 
     @Autowired
-    private TheaterRepository theaterRepository;
+    private TheaterRepository theaterRepository; // for theater lookups
 
     @Autowired
-    private MessageSource messageSource;
+    private MessageSource messageSource; // i18n
 
-    @RateLimiter(name = "basic")
+    @RateLimiter(name = "basic") // prevent abuse
     @GetMapping
     @Operation(summary = "Get showtimes by date", description = "Returns showtimes for a specific date")
     public ResponseEntity<ApiResponse<List<ShowtimeDTO>>> getShowtimesByDate(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         log.info("Fetching showtimes for date: {}", date);
         List<ShowtimeDTO> showtimes = showtimeService.getShowtimesByDate(date);
+
+        // return the showtimes for the requested date
         return ResponseEntity.ok(new ApiResponse<>(
                 true,
                 messageSource.getMessage("showtimes.retrieved.success", null, LocaleContextHolder.getLocale()),
@@ -93,9 +95,13 @@ public class ShowtimeController {
     public ResponseEntity<ApiResponse<Page<ShowtimeDTO>>> getAvailableShowtimes(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @PageableDefault(size = 10) Pageable pageable) {
+        // default to today if no date provided
         LocalDate searchDate = date != null ? date : LocalDate.now();
         log.info("Fetching available showtimes from date: {}", searchDate);
+
+        // get showtimes with available seats
         Page<ShowtimeDTO> showtimes = showtimeService.getAvailableShowtimes(searchDate, pageable);
+
         return ResponseEntity.ok(new ApiResponse<>(
                 true,
                 messageSource.getMessage("showtimes.retrieved.success", null, LocaleContextHolder.getLocale()),
@@ -104,15 +110,19 @@ public class ShowtimeController {
     }
 
     @RateLimiter(name = "basic")
-    @GetMapping("/available/movies/{movieId}")
+    @GetMapping("/available/movies/{movieId}") // filter by movie
     @Operation(summary = "Get available showtimes for a movie", description = "Returns available showtimes for a specific movie from a date")
     public ResponseEntity<ApiResponse<Page<ShowtimeDTO>>> getAvailableShowtimesForMovie(
             @PathVariable Long movieId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @PageableDefault(size = 10) Pageable pageable) {
+        // default to today if no date provided
         LocalDate searchDate = date != null ? date : LocalDate.now();
         log.info("Fetching available showtimes for movie id: {} from date: {}", movieId, searchDate);
+
+        // get showtimes for this movie with available seats
         Page<ShowtimeDTO> showtimes = showtimeService.getAvailableShowtimesForMovie(movieId, searchDate, pageable);
+
         return ResponseEntity.ok(new ApiResponse<>(
                 true,
                 messageSource.getMessage("showtimes.retrieved.success", null, LocaleContextHolder.getLocale()),
@@ -134,26 +144,30 @@ public class ShowtimeController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_ADMIN')") // admin only
     @Operation(summary = "Add a new showtime", description = "Creates a new showtime (Admin only)")
     public ResponseEntity<ApiResponse<ShowtimeDTO>> addShowtime(@Valid @RequestBody ShowtimeRequest showtimeRequest) {
         log.info("Adding new showtime for movie id: {} at theater id: {}",
                 showtimeRequest.getMovieId(), showtimeRequest.getTheaterId());
 
+        // find the movie - will throw exception if not found
         Movie movie = movieRepository.findById(showtimeRequest.getMovieId())
                 .orElseThrow(() -> new RuntimeException("Movie not found with id: " + showtimeRequest.getMovieId()));
 
+        // find the theater - will throw exception if not found
         Theater theater = theaterRepository.findById(showtimeRequest.getTheaterId())
                 .orElseThrow(() -> new RuntimeException("Theater not found with id: " + showtimeRequest.getTheaterId()));
 
+        // create new showtime obj
         Showtime showtime = new Showtime();
         showtime.setMovie(movie);
         showtime.setTheater(theater);
         showtime.setShowDate(showtimeRequest.getShowDate());
         showtime.setShowTime(showtimeRequest.getShowTime());
-        showtime.setTotalSeats(showtimeRequest.getTotalSeats());
+        showtime.setTotalSeats(showtimeRequest.getTotalSeats()); // should match theater capacity usually
         showtime.setPrice(showtimeRequest.getPrice());
 
+        // save it and generate seats
         ShowtimeDTO savedShowtime = showtimeService.addShowtime(showtime);
 
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -165,13 +179,16 @@ public class ShowtimeController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_ADMIN')") // admin only
     @Operation(summary = "Update a showtime", description = "Updates an existing showtime (Admin only)")
     public ResponseEntity<ApiResponse<ShowtimeDTO>> updateShowtime(
             @PathVariable Long id,
             @Valid @RequestBody ShowtimeRequest showtimeRequest) {
         log.info("Updating showtime with id: {}", id);
 
+        // note: we only update date, time and price
+        // can't change movie, theater or seats once created
+        // would need to delete and recreate instead
         Showtime showtime = new Showtime();
         showtime.setShowDate(showtimeRequest.getShowDate());
         showtime.setShowTime(showtimeRequest.getShowTime());
@@ -187,10 +204,11 @@ public class ShowtimeController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_ADMIN')") // admin only
     @Operation(summary = "Delete a showtime", description = "Deletes an existing showtime (Admin only)")
     public ResponseEntity<ApiResponse<Void>> deleteShowtime(@PathVariable Long id) {
         log.info("Deleting showtime with id: {}", id);
+        // this will cascade delete seats and check for existing reservations
         showtimeService.deleteShowtime(id);
         return ResponseEntity.ok(new ApiResponse<>(
                 true,
@@ -198,4 +216,4 @@ public class ShowtimeController {
                 null
         ));
     }
-}
+} // end of ShowtimeController
