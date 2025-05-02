@@ -14,14 +14,17 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+// handles lookup data/reference data for the system
+// things like status codes, reservation types, etc.
+
 @Service
 public class MasterDataService {
 
-    private final MasterDataRepository masterDataRepository;
-    private final ComponentTypeRepository componentTypeRepository;
-    private final ModelMapper modelMapper;
+    private final MasterDataRepository masterDataRepository; // for master data
+    private final ComponentTypeRepository componentTypeRepository; // for component types
+    private final ModelMapper modelMapper; // for dto conversion
 
-    @Autowired
+    @Autowired // constructor injection
     public MasterDataService(MasterDataRepository masterDataRepository,
                             ComponentTypeRepository componentTypeRepository,
                             ModelMapper modelMapper) {
@@ -30,93 +33,79 @@ public class MasterDataService {
         this.modelMapper = modelMapper;
     }
 
-    /**
-     * Get all component types
-     */
+    // get all component types (categories of lookup data)
     public List<ComponentTypeDTO> getAllComponentTypes() {
         return componentTypeRepository.findAll().stream()
-                .map(this::mapToComponentTypeDTO)
+                .map(this::mapToComponentTypeDTO) // convert to dtos
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Get component type by ID
-     */
+    // get a single component type by id
     public ComponentTypeDTO getComponentTypeById(Integer id) {
         ComponentType componentType = componentTypeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Component type not found with id: " + id));
-        return mapToComponentTypeDTO(componentType);
+        return mapToComponentTypeDTO(componentType); // convert to dto
     }
 
-    /**
-     * Get component type by name
-     */
+    // lookup component type by name (easier than using id)
     public ComponentTypeDTO getComponentTypeByName(String name) {
         ComponentType componentType = componentTypeRepository.findByName(name)
                 .orElseThrow(() -> new ResourceNotFoundException("Component type not found with name: " + name));
-        return mapToComponentTypeDTO(componentType);
+        return mapToComponentTypeDTO(componentType); // to dto
     }
 
-    /**
-     * Get all master data for a component type
-     */
+    // get all lookup values for a specific category
     public List<MasterDataDTO> getMasterDataByComponentType(Integer componentTypeId) {
         ComponentType componentType = componentTypeRepository.findById(componentTypeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Component type not found with id: " + componentTypeId));
-        
+
         return masterDataRepository.findByComponentType(componentType).stream()
-                .map(this::mapToMasterDataDTO)
+                .map(this::mapToMasterDataDTO) // convert to dtos
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Get all master data for a component type by name
-     */
+    // get all lookup values by category name (more user-friendly)
+    // e.g., "RESERVATION_STATUS" instead of component type ID
     public List<MasterDataDTO> getMasterDataByComponentTypeName(String componentTypeName) {
         ComponentType componentType = componentTypeRepository.findByName(componentTypeName)
                 .orElseThrow(() -> new ResourceNotFoundException("Component type not found with name: " + componentTypeName));
-        
+
         return masterDataRepository.findByComponentType(componentType).stream()
-                .map(this::mapToMasterDataDTO)
+                .map(this::mapToMasterDataDTO) // entity -> dto
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Get master data by component type and master data ID
-     */
+    // get specific lookup value by category id and value id
+    // e.g., reservation status with id=2 (PAID)
     public MasterDataDTO getMasterDataByComponentTypeAndMasterDataId(Integer componentTypeId, Integer masterDataId) {
         ComponentType componentType = componentTypeRepository.findById(componentTypeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Component type not found with id: " + componentTypeId));
-        
+
         MasterData masterData = masterDataRepository.findByComponentTypeAndMasterDataId(componentType, masterDataId)
                 .orElseThrow(() -> new ResourceNotFoundException("Master data not found with id: " + masterDataId));
-        
-        return mapToMasterDataDTO(masterData);
+
+        return mapToMasterDataDTO(masterData); // convert to dto
     }
 
-    /**
-     * Get master data by component type name and master data ID
-     */
+    // get specific lookup value by category name and value id
+    // e.g., "RESERVATION_STATUS", 2 (PAID) - most user-friendly method
     public MasterDataDTO getMasterDataByComponentTypeNameAndMasterDataId(String componentTypeName, Integer masterDataId) {
         MasterData masterData = masterDataRepository.findByComponentTypeNameAndMasterDataId(componentTypeName, masterDataId)
                 .orElseThrow(() -> new ResourceNotFoundException("Master data not found for component type: " + componentTypeName + " and id: " + masterDataId));
-        
-        return mapToMasterDataDTO(masterData);
+
+        return mapToMasterDataDTO(masterData); // to dto
     }
 
-    /**
-     * Map ComponentType to ComponentTypeDTO
-     */
+    // helper to convert ComponentType -> DTO
     private ComponentTypeDTO mapToComponentTypeDTO(ComponentType componentType) {
-        return modelMapper.map(componentType, ComponentTypeDTO.class);
+        return modelMapper.map(componentType, ComponentTypeDTO.class); // simple mapping
     }
 
-    /**
-     * Map MasterData to MasterDataDTO
-     */
+    // helper to convert MasterData -> DTO
+    // need to manually set the component type id
     private MasterDataDTO mapToMasterDataDTO(MasterData masterData) {
         MasterDataDTO dto = modelMapper.map(masterData, MasterDataDTO.class);
-        dto.setComponentTypeId(masterData.getComponentType().getId());
+        dto.setComponentTypeId(masterData.getComponentType().getId()); // set parent id
         return dto;
     }
 }

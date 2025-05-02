@@ -44,10 +44,10 @@ public class ReviewService {
     private UserBlockService userBlockService;
 
     /**
-     * Add a new review
+     * Add a new review from user
      */
     @Transactional
-    public ReviewDTO addReview(String username, Long movieId, ReviewRequest reviewRequest) {
+    public ReviewDTO addReview(String username, Long movieId, ReviewRequest reviewRequest) { // main review creation method
         log.info("Adding review for movie {} by user {}", movieId, username);
         try {
             User user = userRepository.findByUserName(username)
@@ -57,7 +57,7 @@ public class ReviewService {
                 .orElseThrow(() -> new ResourceNotFoundException("Movie not found with id: " + movieId));
 
             // Check if user is blocked by admin
-            if (userBlockService.isUserBlockedByAdmin(user.getId())) {     
+            if (userBlockService.isUserBlockedByAdmin(user.getId())) {
                 throw new AccessDeniedException("You are blocked by an admin and cannot post reviews");
             }
 
@@ -69,36 +69,36 @@ public class ReviewService {
 
             // Set review status based on moderation settings
             // For now, we'll approve all reviews automatically
-            review.setStatus(ReviewStatus.APPROVED);
+            // TODO: implement proper moderation workflow later
+            review.setStatus(ReviewStatus.APPROVED); // auto-approve for now
 
             // Set helpful tags if provided
             if (reviewRequest.getHelpfulTags() != null && !reviewRequest.getHelpfulTags().isEmpty()) {
-                review.setHelpfulTags(reviewRequest.getHelpfulTags());     
+                review.setHelpfulTags(reviewRequest.getHelpfulTags());
             }
 
             // Verify relationships before saving
-            if (review.getMovie() == null || review.getUser() == null) {   
-                log.error("Failed to set movie or user relationship");     
+            if (review.getMovie() == null || review.getUser() == null) {
+                log.error("Failed to set movie or user relationship");
                 throw new RuntimeException("Failed to create review: invalid movie or user relationship");
             }
 
             Review savedReview = reviewRepository.save(review);
             log.info("Review successfully added with ID: {}", savedReview.getId());
 
-            // Refresh the entity to ensure all relationships are loaded   
-            savedReview = reviewRepository.findById(savedReview.getId())   
+            // Refresh the entity to ensure all relationships are loaded
+            // this is kinda redundant but hibernate can be weird sometimes
+            savedReview = reviewRepository.findById(savedReview.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Failed to retrieve saved review"));
 
             return mapToDTO(savedReview, username);
         } catch (Exception e) {
-            log.error("Error adding review: {}", e.getMessage(), e);       
+            log.error("Error adding review: {}", e.getMessage(), e);
             throw e;
         }
     }
 
-    /**
-     * Update an existing review
-     */
+    // lets users edit their reviews
     @Transactional
     public ReviewDTO updateReview(Long reviewId, String comment, int rating, String username) {
         Review review = reviewRepository.findById(reviewId)
@@ -118,6 +118,7 @@ public class ReviewService {
         review.setRating(rating);
 
         // If an admin is updating someone else's review, reset the status to PENDING for re-moderation
+        // this is a bit weird but makes sense i guess
         if (!review.getUser().getUserName().equals(username) && hasRole(username, "ROLE_ADMIN")) {
             review.setStatus(ReviewStatus.PENDING);
         }
@@ -126,11 +127,9 @@ public class ReviewService {
         return mapToDTO(updatedReview, username);
     }
 
-    /**
-     * Get all reviews by a user
-     */
+    // fetch all reviews by a specific user
     public List<ReviewDTO> getReviewsByUser(String username) {
-        String currentUsername = username; // The currently authenticated user
+        String currentUsername = username; // The currently authenticated user - needed for vote status
 
         User user = userRepository.findByUserName(username)
             .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
@@ -139,8 +138,9 @@ public class ReviewService {
         return reviews.stream().map(review -> mapToDTO(review, currentUsername)).collect(Collectors.toList());
     }
 
-    /**
-     * Get all reviews for a movie
+    /*
+     * get all reviews for a specific movie
+     * admins see all reviews, users only see approved ones
      */
     public List<ReviewDTO> getReviewsByMovie(Long movieId, String username) {
         Movie movie = movieRepository.findById(movieId)
@@ -157,23 +157,19 @@ public class ReviewService {
         return reviews.stream().map(review -> mapToDTO(review, username)).collect(Collectors.toList());
     }
 
-    /**
-     * Get reviews pending moderation (admin only)
-     */
+    // admin-only: get reviews waiting for approval
     public Page<ReviewDTO> getPendingReviews(Pageable pageable, String username) {
         if (!hasRole(username, "ROLE_ADMIN")) {
             throw new AccessDeniedException("Only admins can access pending reviews");
         }
 
         Page<Review> pendingReviews = reviewRepository.findByStatus(ReviewStatus.PENDING, pageable);
-        return pendingReviews.map(review -> mapToDTO(review, username));   
+        return pendingReviews.map(review -> mapToDTO(review, username));
     }
 
-    /**
-     * Approve a review (admin only)
-     */
+    // admin hits the approve button
     @Transactional
-    public ReviewDTO approveReview(Long reviewId, String username) {       
+    public ReviewDTO approveReview(Long reviewId, String username) {
         if (!hasRole(username, "ROLE_ADMIN")) {
             throw new AccessDeniedException("Only admins can approve reviews");
         }
@@ -187,11 +183,9 @@ public class ReviewService {
         return mapToDTO(updatedReview, username);
     }
 
-    /**
-     * Reject a review (admin only)
-     */
+    // admin says no to a review
     @Transactional
-    public ReviewDTO rejectReview(Long reviewId, String username) {        
+    public ReviewDTO rejectReview(Long reviewId, String username) {
         if (!hasRole(username, "ROLE_ADMIN")) {
             throw new AccessDeniedException("Only admins can reject reviews");
         }
@@ -205,9 +199,7 @@ public class ReviewService {
         return mapToDTO(updatedReview, username);
     }
 
-    /**
-     * Add or update helpful tags for a review
-     */
+    // admin can add tags like "helpful", "insightful" etc
     @Transactional
     public ReviewDTO updateHelpfulTags(Long reviewId, String helpfulTags, String username) {
         Review review = reviewRepository.findById(reviewId)
@@ -224,34 +216,26 @@ public class ReviewService {
         return mapToDTO(updatedReview, username);
     }
 
-    /**
-     * Check if a user is the owner of a review
-     */
+    // quick check if user owns the review
     public boolean isReviewOwner(Long reviewId, String username) {
-        Review review = reviewRepository.findById(reviewId).orElse(null);  
+        Review review = reviewRepository.findById(reviewId).orElse(null);
         return review != null && review.getUser().getUserName().equals(username);
     }
 
-    /**
-     * Check if a user has a specific role
-     */
+    // helper method - checks user roles
     private boolean hasRole(String username, String roleName) {
         return userRepository.findByUserName(username)
-            .map(user -> user.getRole().getName().equals(roleName))        
+            .map(user -> user.getRole().getName().equals(roleName))
             .orElse(false);
     }
 
-    /**
-     * Get the average rating for a movie
-     */
+    // calc avg rating - used on movie details page
     public Double getAverageRatingForMovie(Long movieId) {
         return reviewRepository.getAverageRatingForMovie(movieId);
     }
 
-    /**
-     * Map Review entity to DTO
-     */
-    private ReviewDTO mapToDTO(Review review, String currentUsername) {    
+    // convert db entity to dto for frontend
+    private ReviewDTO mapToDTO(Review review, String currentUsername) {
         ReviewDTO dto = new ReviewDTO();
         dto.setId(review.getId());
         dto.setComment(review.getComment());
@@ -275,9 +259,10 @@ public class ReviewService {
             String userName = review.getUser().getUserName();
             log.info("Setting username in ReviewDTO: {} for review ID: {}", userName, review.getId());
             dto.setUserName(userName);
-            
+
             // Also set the userId for reference
             Long userId = review.getUser().getId();
+            // this log is probably excessive but whatever
             log.info("Setting userId in ReviewDTO: {} for review ID: {}", userId, review.getId());
             dto.setUserId(userId);
         } else {
@@ -285,7 +270,7 @@ public class ReviewService {
         }
 
         // Check if the current user has voted on this review
-        if (currentUsername != null && !currentUsername.isEmpty()) {       
+        if (currentUsername != null && !currentUsername.isEmpty()) {
             try {
                 User currentUser = userRepository.findByUserName(currentUsername)
                     .orElse(null);
@@ -297,9 +282,10 @@ public class ReviewService {
                 }
             } catch (Exception e) {
                 log.error("Error checking if user has voted: {}", e.getMessage());
-                // Don't fail the whole operation if this check fails      
+                // Don't fail the whole operation if this check fails
+                // just assume they haven't voted - not the end of the world
                 dto.setUserHasVoted(false);
-                dto.setUserVoteIsUpvote(false);
+                dto.setUserVoteIsUpvote(false); // obvs false if they haven't voted
             }
         }
 

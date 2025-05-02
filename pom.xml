@@ -152,10 +152,11 @@
 			<scope>runtime</scope>
 			<optional>true</optional>
 		</dependency>
-		<dependency>
+		<!-- Redis dependency removed as it's not being used -->
+		<!-- <dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-redis</artifactId>
-		</dependency>
+		</dependency> -->
 		<dependency>
 			<groupId>io.github.resilience4j</groupId>
 			<artifactId>resilience4j-ratelimiter</artifactId>
@@ -195,7 +196,14 @@
 			<groupId>org.flywaydb</groupId>
 			<artifactId>flyway-mysql</artifactId>
 		</dependency>
-	<dependency><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId><version>42.6.0</version></dependency><dependency><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId><version>42.6.0</version></dependency><dependency><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId><version>42.6.0</version></dependency><dependency><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId><version>42.6.0</version></dependency><dependency><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId><version>42.6.0</version></dependency><dependency><groupId>com.h2database</groupId><artifactId>h2</artifactId><version>2.2.224</version></dependency></dependencies>
+	<!-- H2 database for testing -->
+	<dependency>
+		<groupId>com.h2database</groupId>
+		<artifactId>h2</artifactId>
+		<version>2.2.224</version>
+		<scope>runtime</scope>
+	</dependency>
+</dependencies>
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
@@ -205,7 +213,7 @@
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
-		<dependency><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId><version>42.6.0</version></dependency><dependency><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId><version>42.6.0</version></dependency><dependency><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId><version>42.6.0</version></dependency><dependency><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId><version>42.6.0</version></dependency><dependency><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId><version>42.6.0</version></dependency><dependency><groupId>com.h2database</groupId><artifactId>h2</artifactId><version>2.2.224</version></dependency></dependencies>
+		</dependencies>
 	</dependencyManagement>
 
 	<build>

@@ -32,23 +32,23 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/v1/reviews")
-@Tag(name = "Review Management", description = "APIs for managing movie reviews")
-@Slf4j
+@RequestMapping("/api/v1/reviews") // base path for review endpoints
+@Tag(name = "Review Management", description = "APIs for managing movie reviews") // swagger docs
+@Slf4j // logging
 public class ReviewController {
-    @Autowired
-    private ReviewService reviewService;
+    @Autowired // TODO: switch to constructor injection
+    private ReviewService reviewService; // handles review business logic
 
     @Autowired
-    private ReviewVoteService reviewVoteService;
+    private ReviewVoteService reviewVoteService; // handles upvotes/downvotes
 
     @Autowired
-    private MessageSource messageSource;
+    private MessageSource messageSource; // i18n
 
-    @RateLimiter(name = "basic")
-    @PostMapping("/movies/{movieId}")
+    @RateLimiter(name = "basic") // prevent abuse
+    @PostMapping("/movies/{movieId}") // add review for a movie
     @Operation(summary = "Add new review", description = "Adds a new review for a specific movie")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')") // must be logged in
     public ResponseEntity<ApiResponse<ReviewDTO>> addReview(
             @PathVariable Long movieId,
             @Valid @RequestBody ReviewRequest reviewRequest) {
@@ -56,6 +56,7 @@ public class ReviewController {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         log.info("Adding review for movie {} by user {}", movieId, username);
 
+        // this will create a review in PENDING status for admin approval
         ReviewDTO review = reviewService.addReview(username, movieId, reviewRequest);
 
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -71,10 +72,12 @@ public class ReviewController {
     }
 
     @RateLimiter(name = "basic")
-    @PutMapping("/{reviewId}")
-    @PreAuthorize("hasRole('ADMIN') or @reviewService.isReviewOwner(#reviewId, principal.username)")
+    @PutMapping("/{reviewId}") // update existing review
+    @PreAuthorize("hasRole('ADMIN') or @reviewService.isReviewOwner(#reviewId, principal.username)") // admin or owner only
     public ResponseEntity<?> updateReview(@PathVariable Long reviewId, @RequestBody Map<String, Object> updates) {
         try {
+            // extract update fields from request
+            // not using a DTO here cuz we only need 2 fields
             ReviewDTO updatedReview = reviewService.updateReview(
                     reviewId,
                     (String) updates.get("comment"),
@@ -91,6 +94,7 @@ public class ReviewController {
                     updatedReview
             ));
         } catch (ValidationException e) {
+            // validation failed - return errors
             return ResponseEntity.badRequest()
                     .body(new ApiResponse<>(
                             false,
@@ -139,13 +143,17 @@ public class ReviewController {
     }
 
     @RateLimiter(name = "basic")
-    @GetMapping("/pending")
-    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/pending") // reviews waiting for approval
+    @PreAuthorize("hasRole('ADMIN')") // admin only
     @Operation(summary = "Get pending reviews", description = "Returns all reviews pending moderation (Admin only)")
     public ResponseEntity<ApiResponse<Page<ReviewDTO>>> getPendingReviews(
             @PageableDefault(size = 10) Pageable pageable) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        log.info("Admin {} fetching pending reviews", username); // track admin activity
+
+        // get reviews waiting for approval
         Page<ReviewDTO> reviews = reviewService.getPendingReviews(pageable, username);
+
         return ResponseEntity.ok(new ApiResponse<>(
                 true,
                 messageSource.getMessage(
@@ -218,16 +226,19 @@ public class ReviewController {
     }
 
     @RateLimiter(name = "basic")
-    @PutMapping("/{reviewId}/upvote")
-    @PreAuthorize("isAuthenticated()")
+    @PutMapping("/{reviewId}/upvote") // thumbs up
+    @PreAuthorize("isAuthenticated()") // must be logged in
     @Operation(summary = "Upvote a review", description = "Upvotes a review or removes the upvote if already upvoted")
     public ResponseEntity<ApiResponse<ReviewVoteDTO>> upvoteReview(@PathVariable Long reviewId) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        log.info("User {} upvoting review {}", username, reviewId);
 
         try {
+            // true = upvote (thumbs up)
             ReviewVoteDTO vote = reviewVoteService.voteReview(reviewId, username, true);
 
             // If vote is null, it means the vote was removed (toggle)
+            // clicking upvote twice removes it
             if (vote == null) {
                 return ResponseEntity.ok(new ApiResponse<>(
                         true,
@@ -250,18 +261,22 @@ public class ReviewController {
                     vote
             ));
         } catch (ResourceNotFoundException e) {
+            // review not found
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>(
                     false,
                     e.getMessage(),
                     null
             ));
         } catch (AccessDeniedException e) {
+            // user not allowed to vote on this review
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ApiResponse<>(
                     false,
                     e.getMessage(),
                     null
             ));
         } catch (Exception e) {
+            // something else went wrong
+            log.error("Error upvoting review {}: {}", reviewId, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(
                     false,
                     e.getMessage(),
@@ -271,16 +286,19 @@ public class ReviewController {
     }
 
     @RateLimiter(name = "basic")
-    @PutMapping("/{reviewId}/downvote")
-    @PreAuthorize("isAuthenticated()")
+    @PutMapping("/{reviewId}/downvote") // thumbs down
+    @PreAuthorize("isAuthenticated()") // must be logged in
     @Operation(summary = "Downvote a review", description = "Downvotes a review or removes the downvote if already downvoted")
     public ResponseEntity<ApiResponse<ReviewVoteDTO>> downvoteReview(@PathVariable Long reviewId) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        log.info("User {} downvoting review {}", username, reviewId);
 
         try {
+            // false = downvote (thumbs down)
             ReviewVoteDTO vote = reviewVoteService.voteReview(reviewId, username, false);
 
             // If vote is null, it means the vote was removed (toggle)
+            // clicking downvote twice removes it
             if (vote == null) {
                 return ResponseEntity.ok(new ApiResponse<>(
                         true,
@@ -303,18 +321,22 @@ public class ReviewController {
                     vote
             ));
         } catch (ResourceNotFoundException e) {
+            // review not found
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>(
                     false,
                     e.getMessage(),
                     null
             ));
         } catch (AccessDeniedException e) {
+            // user not allowed to vote on this review
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ApiResponse<>(
                     false,
                     e.getMessage(),
                     null
             ));
         } catch (Exception e) {
+            // something else went wrong
+            log.error("Error downvoting review {}: {}", reviewId, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(
                     false,
                     e.getMessage(),
@@ -322,4 +344,4 @@ public class ReviewController {
             ));
         }
     }
-}
+} // end of ReviewController

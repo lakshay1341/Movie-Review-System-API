@@ -23,49 +23,52 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/payments")
-@Slf4j
-@Tag(name = "Payment", description = "Payment management APIs")
+@RequestMapping("/api/v1/payments") // base path for payment endpoints
+@Slf4j // logging
+@Tag(name = "Payment", description = "Payment management APIs") // swagger docs
 public class PaymentController {
 
-    @Autowired
-    private PaymentService paymentService;
+    @Autowired // TODO: switch to constructor injection
+    private PaymentService paymentService; // handles payment processing
 
     @Autowired
-    private MessageSource messageSource;
+    private MessageSource messageSource; // i18n
 
-    @PostMapping("/create-checkout-session")
-    @PreAuthorize("isAuthenticated()")
-    @RateLimiter(name = "basic")
+    @PostMapping("/create-checkout-session") // create stripe checkout session
+    @PreAuthorize("isAuthenticated()") // must be logged in
+    @RateLimiter(name = "basic") // prevent abuse
     @Operation(summary = "Create checkout session", description = "Creates a Stripe checkout session for a reservation")
     public ResponseEntity<ApiResponse<CheckoutSessionDTO>> createCheckoutSession(
             @Valid @RequestBody PaymentRequest paymentRequest) {
-        
+
         log.info("Creating checkout session for reservation: {}", paymentRequest.getReservationId());
-        
+
         try {
             // Client should provide complete URLs for success and cancel redirects
+            // these are where stripe will redirect after payment
             String successUrl = paymentRequest.getSuccessUrl();
             String cancelUrl = paymentRequest.getCancelUrl();
-            
-            // Validate URLs
+
+            // Validate URLs - both required
             if (successUrl == null || cancelUrl == null) {
                 return ResponseEntity.badRequest().body(new ApiResponse<>(
                         false,
-                        "Success and cancel URLs are required",
+                        "Success and cancel URLs are required", // simple error msg
                         null
                 ));
             }
-            
+
+            // create the checkout session with stripe
             CheckoutSessionDTO checkoutSessionDTO = paymentService.createCheckoutSession(
                     paymentRequest.getReservationId(), successUrl, cancelUrl);
-            
+
             return ResponseEntity.ok(new ApiResponse<>(
                     true,
                     messageSource.getMessage("payment.session.created", null, LocaleContextHolder.getLocale()),
                     checkoutSessionDTO
             ));
         } catch (StripeException e) {
+            // something went wrong with stripe
             log.error("Stripe error: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ApiResponse<>(
@@ -74,6 +77,7 @@ public class PaymentController {
                             null
                     ));
         } catch (Exception e) {
+            // something else went wrong
             log.error("Error creating checkout session: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse<>(
@@ -84,29 +88,32 @@ public class PaymentController {
         }
     }
 
-    @GetMapping("/reservation/{reservationId}")
-    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/reservation/{reservationId}") // get payment for a reservation
+    @PreAuthorize("isAuthenticated()") // must be logged in
     @RateLimiter(name = "basic")
     @Operation(summary = "Get payment by reservation", description = "Returns payment details for a reservation")
     public ResponseEntity<ApiResponse<PaymentDTO>> getPaymentByReservation(@PathVariable Long reservationId) {
         log.info("Getting payment for reservation: {}", reservationId);
-        
+
         try {
+            // get current user info
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             String username = auth.getName();
             boolean isAdmin = auth.getAuthorities().stream()
                     .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-            
+
             // Authorization check would be done in service layer
-            
+            // only owner or admin can see payment details
+
             PaymentDTO paymentDTO = paymentService.getPaymentByReservationId(reservationId);
-            
+
             return ResponseEntity.ok(new ApiResponse<>(
                     true,
                     messageSource.getMessage("payment.retrieved", null, LocaleContextHolder.getLocale()),
                     paymentDTO
             ));
         } catch (Exception e) {
+            // something went wrong
             log.error("Error retrieving payment: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse<>(
@@ -117,29 +124,35 @@ public class PaymentController {
         }
     }
 
-    @PostMapping("/webhook")
+    @PostMapping("/webhook") // stripe webhook endpoint
     @Operation(summary = "Stripe webhook", description = "Handles Stripe webhook events")
     public ResponseEntity<String> handleStripeWebhook(HttpServletRequest request, @RequestBody String payload) {
         log.info("Received Stripe webhook");
-        
+
+        // get signature header for verification
         String sigHeader = request.getHeader("Stripe-Signature");
         log.debug("Stripe-Signature header: {}", sigHeader);
-        
+
+        // signature is required for security
         if (sigHeader == null) {
             log.error("Missing Stripe-Signature header");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Missing Stripe-Signature header");
         }
-        
+
         try {
+            // process the webhook - this will update payment status
+            // and send email receipt if payment successful
             paymentService.handleWebhookEvent(payload, sigHeader);
             log.info("Webhook processed successfully");
             return ResponseEntity.ok("Webhook processed successfully");
         } catch (StripeException e) {
+            // stripe validation failed
             log.error("Stripe webhook error: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Webhook error: " + e.getMessage());
         } catch (Exception e) {
+            // something else went wrong
             log.error("Error processing webhook: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Webhook processing error");
         }
     }
-}
+} // end of PaymentController

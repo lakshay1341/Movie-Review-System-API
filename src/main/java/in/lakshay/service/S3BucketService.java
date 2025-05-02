@@ -30,9 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Service class for handling operations with AWS S3 bucket for movie posters.
- */
+// handles all the S3 bucket stuff for movie posters
+// make sure AWS creds are set in env vars
 @Service
 @Slf4j
 public class S3BucketService {
@@ -40,9 +39,8 @@ public class S3BucketService {
     private final AmazonS3 s3Client;
     private final String bucketName;
 
-    /**
-     * Initialize the S3 client using AWS credentials from environment variables.
-     */
+    // constructor - sets up the S3 client
+    // gets creds from application.properties
     public S3BucketService(
             @Value("${aws.access.key.id}") String accessKey,
             @Value("${aws.secret.access.key}") String secretKey,
@@ -51,6 +49,7 @@ public class S3BucketService {
 
         if (accessKey == null || secretKey == null || bucketName == null) {
             log.error("Missing required AWS credentials or bucket name in environment variables");
+            // can't continue without these
             throw new IllegalArgumentException("AWS credentials and bucket name must be set in environment variables");
         }
 
@@ -67,13 +66,8 @@ public class S3BucketService {
         log.info("S3BucketService initialized with bucket: {}", this.bucketName);
     }
 
-    /**
-     * Upload a movie poster to S3 bucket.
-     *
-     * @param file     The movie poster file to upload
-     * @param movieId  The ID of the movie. If not provided, a UUID will be generated.
-     * @return Information about the uploaded file including the URL
-     */
+    // uploads a poster image to S3
+    // uses movieId as filename or generates UUID if null
     public Map<String, Object> uploadPoster(MultipartFile file, Long movieId) throws IOException {
         String fileId = movieId != null ? movieId.toString() : UUID.randomUUID().toString();
 
@@ -81,8 +75,8 @@ public class S3BucketService {
         String originalFilename = file.getOriginalFilename();
         String fileExtension = "";
         if (originalFilename != null && originalFilename.contains(".")) {
-            fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
-        }
+            fileExtension = originalFilename.substring(originalFilename.lastIndexOf(".")); // like .jpg or .png
+        } // no extension is weird but ok i guess
 
         // Create a unique file name
         String fileName = "movie_posters/" + fileId + fileExtension;
@@ -92,13 +86,13 @@ public class S3BucketService {
         metadata.setContentLength(file.getSize());
         metadata.setContentType(file.getContentType());
 
-        // Upload to S3
+        // Upload to S3 - the actual upload happens here
         s3Client.putObject(new PutObjectRequest(
                 bucketName,
                 fileName,
                 file.getInputStream(),
                 metadata)
-                .withCannedAcl(CannedAccessControlList.PublicRead));
+                .withCannedAcl(CannedAccessControlList.PublicRead)); // make it public so we can access it
 
         // Generate the URL for the uploaded file
         String fileUrl = "https://" + bucketName + ".s3.amazonaws.com/" + fileName;
@@ -115,13 +109,8 @@ public class S3BucketService {
         return result;
     }
 
-    /**
-     * Generate a pre-signed URL for accessing a movie poster.
-     *
-     * @param fileName   The name of the file in S3
-     * @param expiration URL expiration time in seconds (default: 1 hour)
-     * @return Pre-signed URL for accessing the file
-     */
+    // creates a temporary access URL with expiration
+    // not really using this much but could be useful later
     public String getPosterUrl(String fileName, int expiration) {
         // If fileName doesn't start with movie_posters/, add it
         if (!fileName.startsWith("movie_posters/")) {
@@ -134,9 +123,9 @@ public class S3BucketService {
 
         // Generate pre-signed URL
         GeneratePresignedUrlRequest generatePresignedUrlRequest = new GeneratePresignedUrlRequest(bucketName, fileName)
-                //.withMethod(HttpMethodName.GET)
-                .withMethod((HttpMethod.GET))
-                .withExpiration(expirationDate);
+                //.withMethod(HttpMethodName.GET) // old way
+                .withMethod((HttpMethod.GET)) // new way
+                .withExpiration(expirationDate); // when url expires
 
         URL url = s3Client.generatePresignedUrl(generatePresignedUrlRequest);
 
@@ -144,12 +133,8 @@ public class S3BucketService {
         return url.toString();
     }
 
-    /**
-     * Delete a movie poster from S3 bucket.
-     *
-     * @param fileName The name of the file to delete
-     * @return Status of the delete operation
-     */
+    // removes a poster from S3
+    // be careful with this one!
     public Map<String, String> deletePoster(String fileName) {
         // If fileName doesn't start with movie_posters/, add it
         if (!fileName.startsWith("movie_posters/")) {
@@ -168,30 +153,27 @@ public class S3BucketService {
         return result;
     }
 
-    /**
-     * List all movie posters in the S3 bucket.
-     *
-     * @param prefix The prefix to filter objects (default: movie_posters/)
-     * @return List of poster objects with their details
-     */
+    // gets all posters - used in admin panel
+    // returns a list of maps with file details
     public List<Map<String, Object>> listPosters(String prefix) {
         if (prefix == null) {
             prefix = "movie_posters/";
         }
 
         // List objects in the bucket with the given prefix
+        // this is how we filter to just get movie posters
         ListObjectsV2Request listObjectsRequest = new ListObjectsV2Request()
                 .withBucketName(bucketName)
-                .withPrefix(prefix);
+                .withPrefix(prefix); // only get files with this prefix
 
         ListObjectsV2Result result = s3Client.listObjectsV2(listObjectsRequest);
 
-        // Extract relevant information
-        List<Map<String, Object>> posters = new ArrayList<>();
+        // Extract relevant information from results
+        List<Map<String, Object>> posters = new ArrayList<>(); // will hold our response
         for (S3ObjectSummary obj : result.getObjectSummaries()) {
-            // Generate URL for each poster
+            // Generate URL for each poster - standard S3 URL format
             String fileName = obj.getKey();
-            String url = "https://" + bucketName + ".s3.amazonaws.com/" + fileName;
+            String url = "https://" + bucketName + ".s3.amazonaws.com/" + fileName; // public URL
 
             Map<String, Object> poster = new HashMap<>();
             poster.put("fileName", fileName);

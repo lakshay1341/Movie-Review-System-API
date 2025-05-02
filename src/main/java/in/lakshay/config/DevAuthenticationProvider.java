@@ -15,20 +15,21 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
 /**
- * Development-only authentication provider that provides a fallback mechanism
- * for authentication when the standard authentication fails.
+ * DEV ONLY auth provider - gives us a backdoor for testing
+ * when the normal auth is being difficult
  *
- * This is only active in the "h2" profile and should never be used in production.
+ * NEVER EVER use this in production!! Only for h2 profile.
  */
 @Component
-@Profile("h2")
+@Profile("h2") // only active in h2 profile
 @Slf4j
 public class DevAuthenticationProvider implements AuthenticationProvider {
 
     @Autowired
-    private UserRepository userRepository;
+    private UserRepository userRepository; // to look up users
 
-    // Using BCryptPasswordEncoder directly to avoid circular dependency
+    // using encoder directly to avoid circular dependency
+    // spring security config is a mess sometimes lol
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @Override
@@ -36,15 +37,16 @@ public class DevAuthenticationProvider implements AuthenticationProvider {
         String username = authentication.getName();
         String password = authentication.getCredentials().toString();
 
-        log.debug("DevAuthenticationProvider attempting to authenticate user: {}", username);
+        log.debug("DevAuthProvider trying to auth user: {}", username);
 
-        // Try to find the user
+        // find the user or bail
         User user = userRepository.findByUserName(username)
                 .orElseThrow(() -> new BadCredentialsException("Invalid username or password"));
 
-        // Check if the password is "password" for development testing
+        // BACKDOOR: magic password for dev testing
+        // this is the magic - just use "password" to login as anyone in dev mode
         if ("password".equals(password)) {
-            log.warn("DEV MODE: Allowing login with test password for user: {}", username);
+            log.warn("DEV MODE: Letting {} login with backdoor password!", username);
             UserPrincipal principal = new UserPrincipal(user);
             return new UsernamePasswordAuthenticationToken(
                     principal,
@@ -52,9 +54,9 @@ public class DevAuthenticationProvider implements AuthenticationProvider {
                     principal.getAuthorities());
         }
 
-        // Otherwise, try normal password check
+        // fallback to normal password check if backdoor not used
         if (passwordEncoder.matches(password, user.getPassword().replace("{bcrypt}", ""))) {
-            log.debug("DevAuthenticationProvider: Password matched for user: {}", username);
+            log.debug("DevAuthProvider: Password matched for {}", username);
             UserPrincipal principal = new UserPrincipal(user);
             return new UsernamePasswordAuthenticationToken(
                     principal,
@@ -62,11 +64,15 @@ public class DevAuthenticationProvider implements AuthenticationProvider {
                     principal.getAuthorities());
         }
 
+        // nope, bad password
         throw new BadCredentialsException("Invalid username or password");
     }
 
+    // tell spring what kind of auth we support
     @Override
     public boolean supports(Class<?> authentication) {
         return authentication.equals(UsernamePasswordAuthenticationToken.class);
     }
+
+    // TODO: remove this before going to prod!!!
 }

@@ -1,17 +1,18 @@
--- Create component_types table if it doesn't exist
+-- component types for master data
+-- added 2023-04-15
 CREATE TABLE IF NOT EXISTS component_types (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(50) NOT NULL UNIQUE
+    name VARCHAR(50) NOT NULL UNIQUE  -- like 'RESERVATION_STATUS', 'PAYMENT_STATUS', etc
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Create master_data table if it doesn't exist
+-- master data table - for lookup values and enums
 CREATE TABLE IF NOT EXISTS master_data (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    master_data_id INT NOT NULL,
-    data_value VARCHAR(100) NOT NULL,
+    master_data_id INT NOT NULL, -- numeric id within component type
+    data_value VARCHAR(100) NOT NULL, -- display value
     component_type_id INT NOT NULL,
     FOREIGN KEY (component_type_id) REFERENCES component_types(id),
-    UNIQUE KEY unique_master_data (component_type_id, master_data_id)
+    UNIQUE KEY unique_master_data (component_type_id, master_data_id) -- prevent dupes
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Create roles table if it doesn't exist
@@ -20,15 +21,15 @@ CREATE TABLE IF NOT EXISTS roles (
     name VARCHAR(50) NOT NULL UNIQUE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Create users table if it doesn't exist
+-- users table - stores all user accounts
 CREATE TABLE IF NOT EXISTS users (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_name VARCHAR(50) NOT NULL UNIQUE,
-    email VARCHAR(100) NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    role_id INT NOT NULL,
+    user_name VARCHAR(50) NOT NULL UNIQUE, -- login name
+    email VARCHAR(100) NOT NULL, -- for notifications
+    password VARCHAR(255) NOT NULL, -- bcrypt hashed
+    role_id INT NOT NULL, -- ROLE_USER or ROLE_ADMIN
     FOREIGN KEY (role_id) REFERENCES roles(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci; -- utf8 for intl support
 
 -- Create movies table if it doesn't exist
 CREATE TABLE IF NOT EXISTS movies (
@@ -62,18 +63,18 @@ CREATE TABLE IF NOT EXISTS showtimes (
     FOREIGN KEY (theater_id) REFERENCES theaters(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Create reservations table if it doesn't exist
+-- reservations - when a user books seats for a showtime
 CREATE TABLE IF NOT EXISTS reservations (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT NOT NULL,
-    showtime_id BIGINT NOT NULL,
-    reservation_time TIMESTAMP NOT NULL,
-    status_id INT NOT NULL DEFAULT 1,
-    total_price DECIMAL(10, 2) NOT NULL,
-    paid BOOLEAN NOT NULL DEFAULT FALSE,
+    user_id BIGINT NOT NULL, -- who made the reservation
+    showtime_id BIGINT NOT NULL, -- what movie/theater/time
+    reservation_time TIMESTAMP NOT NULL, -- when they made it
+    status_id INT NOT NULL DEFAULT 1, -- 1=pending, 2=confirmed, 3=cancelled etc
+    total_price DECIMAL(10, 2) NOT NULL, -- sum of all seats
+    paid BOOLEAN NOT NULL DEFAULT FALSE, -- payment status
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (showtime_id) REFERENCES showtimes(id)
-    -- No foreign key constraint for status_id to allow flexibility
+    -- No FK for status_id cuz it's from master_data
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Create seats table if it doesn't exist
@@ -88,22 +89,22 @@ CREATE TABLE IF NOT EXISTS seats (
     UNIQUE KEY unique_seat (showtime_id, seat_number)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Create reviews table if it doesn't exist
+-- movie reviews from users
 CREATE TABLE IF NOT EXISTS reviews (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT NOT NULL,
-    movie_id BIGINT NOT NULL,
-    rating INT NOT NULL,
-    comment TEXT,
+    user_id BIGINT NOT NULL, -- reviewer
+    movie_id BIGINT NOT NULL, -- movie being reviewed
+    rating INT NOT NULL, -- 1-5 stars
+    comment TEXT, -- optional review text
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NULL DEFAULT NULL,
-    upvotes INT DEFAULT 0,
-    downvotes INT DEFAULT 0,
-    helpful_tags VARCHAR(255),
-    status VARCHAR(20) DEFAULT 'APPROVED',
+    updated_at TIMESTAMP NULL DEFAULT NULL, -- if edited
+    upvotes INT DEFAULT 0, -- counter cache
+    downvotes INT DEFAULT 0, -- counter cache
+    helpful_tags VARCHAR(255), -- comma-separated tags like 'funny,insightful'
+    status VARCHAR(20) DEFAULT 'APPROVED', -- or PENDING, REJECTED
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (movie_id) REFERENCES movies(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci; -- todo: add index on movie_id
 
 -- Create review_votes table if it doesn't exist
 CREATE TABLE IF NOT EXISTS review_votes (

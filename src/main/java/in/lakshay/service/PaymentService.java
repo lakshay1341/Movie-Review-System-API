@@ -24,117 +24,117 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
+import java.util.Optional; // for nullable results
+
+// handles all payment processing with Stripe integration
 
 @Service
-@Slf4j
+@Slf4j // logging
 public class PaymentService {
 
-    @Autowired
-    private PaymentRepository paymentRepository;
+    @Autowired // todo: switch to constructor injection someday
+    private PaymentRepository paymentRepository; // db stuff
 
     @Autowired
-    private ReservationRepository reservationRepository;
+    private ReservationRepository reservationRepository; // for finding reservations
 
     @Autowired
-    private ModelMapper modelMapper;
+    private ModelMapper modelMapper; // entity <-> dto mapper
 
     @Autowired
-    private PdfService pdfService;
+    private PdfService pdfService; // makes the pdf receipts
 
     @Autowired
-    private EmailService emailService;
+    private EmailService emailService; // sends the emails
 
-    @Value("${stripe.api.key}")
-    private String stripeApiKey;
+    @Value("${stripe.api.key}") // from application.properties
+    private String stripeApiKey; // stripe secret key - don't log this!
 
     @Value("${stripe.webhook.secret}")
-    private String webhookSecret;
+    private String webhookSecret; // for verifying stripe callbacks
 
-    /**
-     * Creates a Stripe Checkout Session for a reservation
-     */
+    // creates a stripe checkout session so user can pay
     @Transactional
     public CheckoutSessionDTO createCheckoutSession(Long reservationId, String successUrl, String cancelUrl) throws StripeException {
         log.info("Creating checkout session for reservation: {}", reservationId);
 
-        // Initialize Stripe with API key
-        Stripe.apiKey = stripeApiKey;
+        // gotta set the API key for each request
+        Stripe.apiKey = stripeApiKey; // from props
 
         // Find the reservation
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Reservation not found with id: " + reservationId));
 
-        // Check if payment already exists and is successful
+        // Make sure they haven't already paid
         Optional<Payment> existingPayment = paymentRepository.findByReservation(reservation);
         if (existingPayment.isPresent() && existingPayment.get().getStatus() == Payment.PaymentStatus.SUCCEEDED) {
-            throw new IllegalStateException("Payment already completed for this reservation");
+            throw new IllegalStateException("Payment already completed for this reservation"); // no double payments!
         }
 
-        // Create line item description
+        // what shows on checkout page
         String description = String.format("Movie Reservation #%d - %s",
                 reservation.getId(),
                 reservation.getShowtime().getMovie().getTitle());
 
-        // Create a checkout session with Stripe
+        // stripe has a crazy builder pattern API
         SessionCreateParams params = SessionCreateParams.builder()
-                .setMode(SessionCreateParams.Mode.PAYMENT)
-                .setSuccessUrl(successUrl)
-                .setCancelUrl(cancelUrl)
-                .setClientReferenceId(reservation.getId().toString())
-                .setCustomerEmail(reservation.getUser().getEmail())
+                .setMode(SessionCreateParams.Mode.PAYMENT) // one-time payment
+                .setSuccessUrl(successUrl) // redirect after payment
+                .setCancelUrl(cancelUrl) // if they cancel
+                .setClientReferenceId(reservation.getId().toString()) // so we can find it later
+                .setCustomerEmail(reservation.getUser().getEmail()) // prefill their email
                 .addLineItem(SessionCreateParams.LineItem.builder()
                         .setPriceData(SessionCreateParams.LineItem.PriceData.builder()
-                                .setCurrency("usd")
-                                .setUnitAmount((long) (reservation.getTotalPrice() * 100)) // Amount in cents
+                                .setCurrency("usd") // TODO: support more currencies someday
+                                .setUnitAmount((long) (reservation.getTotalPrice() * 100)) // stripe wants cents
                                 .setProductData(SessionCreateParams.LineItem.PriceData.ProductData.builder()
                                         .setName("Movie Reservation")
-                                        .setDescription(description)
+                                        .setDescription(description) // movie title + res id
                                         .build())
                                 .build())
-                        .setQuantity(1L)
+                        .setQuantity(1L) // just one reservation
                         .build())
                 .build();
 
+        // call the stripe API
         Session session = Session.create(params);
 
-        // Save or update payment record
+        // Save payment record in our db
         Payment payment = existingPayment.orElse(new Payment());
         payment.setReservation(reservation);
         payment.setPaymentIntentId(session.getId());
         payment.setAmount(reservation.getTotalPrice());
-        payment.setStatus(Payment.PaymentStatus.PENDING);
+        payment.setStatus(Payment.PaymentStatus.PENDING); // not paid yet
         payment.setCreatedAt(LocalDateTime.now());
 
         paymentRepository.save(payment);
 
-        // Return session details
+        // Return the session info to frontend
         return new CheckoutSessionDTO(session.getId(), session.getUrl());
     }
 
-    /**
-     * Handles Stripe webhook events
-     */
+    // handles incoming webhook events from stripe
+    // this is how we know when payments succeed
     @Transactional
     public void handleWebhookEvent(String payload, String sigHeader) throws StripeException {
         log.info("Handling Stripe webhook event");
 
-        // Verify the webhook signature
+        // Verify the webhook signature - prevents forgery
         Event event = Webhook.constructEvent(payload, sigHeader, webhookSecret);
 
-        // Get the event type
+        // Get the event type - stripe sends many different event types
         String eventType = event.getType();
         log.info("Received Stripe event: {}", eventType);
 
-        // Process the event based on its type
-        if (eventType.equals("checkout.session.completed")) {
+        // Process the event based on its type - we only care about a few
+        if (eventType.equals("checkout.session.completed")) { // user completed checkout
             handleCheckoutSessionCompleted(payload);
-        } else if (eventType.equals("payment_intent.succeeded")) {
+        } else if (eventType.equals("payment_intent.succeeded")) { // payment succeeded
             handlePaymentIntentSucceeded(payload);
-        } else if (eventType.equals("charge.succeeded")) {
+        } else if (eventType.equals("charge.succeeded")) { // charge went through
             handleChargeSucceeded(payload);
         } else {
-            log.info("Unhandled event type: {}", eventType);
+            log.info("Unhandled event type: {}", eventType); // we ignore other events
         }
     }
 
@@ -264,13 +264,12 @@ public class PaymentService {
         }
     }
 
-    /**
-     * Updates payment status to SUCCEEDED and marks reservation as paid
-     */
+    // updates payment status to SUCCEEDED and marks reservation as paid
+    // called when we get confirmation from stripe
     @Transactional
     public void updateReservationStatus(Reservation reservation) {
         if (reservation == null) {
-            log.warn("Cannot update status for null reservation");
+            log.warn("Cannot update status for null reservation"); // sanity check
             return;
         }
 
@@ -279,12 +278,13 @@ public class PaymentService {
 
         try {
             // Get a fresh copy of the reservation from the database
+            // this avoids any stale data issues
             Reservation freshReservation = reservationRepository.findById(reservationId)
                     .orElseThrow(() -> new ResourceNotFoundException("Reservation not found with id: " + reservationId));
 
             // Mark the reservation as paid and update status to PAID (2)
-            freshReservation.setPaid(true);
-            freshReservation.setStatusId(2); // 2 = PAID
+            freshReservation.setPaid(true); // boolean flag
+            freshReservation.setStatusId(2); // 2 = PAID in master_data
             reservationRepository.save(freshReservation);
 
             // Find the payment for this reservation
@@ -292,19 +292,19 @@ public class PaymentService {
 
             if (payment != null) {
                 // Update payment status to SUCCEEDED
-                payment.setStatus(Payment.PaymentStatus.SUCCEEDED);
-                payment.setUpdatedAt(LocalDateTime.now());
+                payment.setStatus(Payment.PaymentStatus.SUCCEEDED); // enum value
+                payment.setUpdatedAt(LocalDateTime.now()); // timestamp the update
                 paymentRepository.save(payment);
 
-                // Generate and send receipt
-                generateAndSendReceipt(payment);
+                // Generate PDF receipt and send email to user
+                generateAndSendReceipt(payment); // async operation
 
                 log.info("Payment status updated to SUCCEEDED and reservation marked as paid for ID: {}", reservationId);
             } else {
-                log.warn("No payment found for reservation ID: {}", reservationId);
+                log.warn("No payment found for reservation ID: {}", reservationId); // shouldn't happen
             }
         } catch (Exception e) {
-            log.error("Error updating payment status: {}", e.getMessage(), e);
+            log.error("Error updating payment status: {}", e.getMessage(), e); // log full stack trace
         }
     }
 
@@ -323,40 +323,37 @@ public class PaymentService {
         return mapToDTO(payment);
     }
 
-    /**
-     * Maps Payment entity to PaymentDTO
-     */
+    // convert payment entity to DTO
     private PaymentDTO mapToDTO(Payment payment) {
         PaymentDTO paymentDTO = modelMapper.map(payment, PaymentDTO.class);
         paymentDTO.setReservationId(payment.getReservation().getId());
         return paymentDTO;
     }
 
-    /**
-     * Generates a PDF receipt and sends it via email
-     */
+    // makes a PDF receipt and emails it to customer
+    // called after payment is confirmed
     @Transactional
     public void generateAndSendReceipt(Payment payment) {
         log.info("Generating and sending receipt for payment ID: {}", payment.getId());
 
         try {
-            // Generate PDF receipt
-            String pdfPath = pdfService.generateReceipt(payment);
+            // make the PDF
+            String pdfPath = pdfService.generateReceipt(payment); // gives us file path
 
-            // Update payment with PDF receipt path
+            // save the path in db
             payment.setPdfReceiptPath(pdfPath);
             paymentRepository.save(payment);
 
-            // Send email with receipt
-            emailService.sendReceiptEmail(payment, pdfPath);
+            // email it to customer
+            emailService.sendReceiptEmail(payment, pdfPath); // might fail
 
             log.info("Receipt generated and sent successfully for payment ID: {}", payment.getId());
         } catch (DocumentException e) {
-            log.error("Error generating PDF receipt: {}", e.getMessage(), e);
+            log.error("Error generating PDF receipt: {}", e.getMessage(), e); // iText problem
         } catch (MessagingException e) {
-            log.error("Error sending receipt email: {}", e.getMessage(), e);
+            log.error("Error sending receipt email: {}", e.getMessage(), e); // email problem
         } catch (Exception e) {
-            log.error("Unexpected error in receipt generation/sending: {}", e.getMessage(), e);
+            log.error("Unexpected error in receipt generation/sending: {}", e.getMessage(), e); // something else broke
         }
     }
 }
