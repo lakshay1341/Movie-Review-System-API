@@ -36,94 +36,21 @@ The system is deployed and fully functional at [https://cineticket.onrender.com]
 
 ## 🖥️ Frontend Demo
 
-<div align="center">
-  <table>
-    <tr>
-      <td align="center" width="50%">
-        <h4>👨‍💼 Admin Dashboard</h4>
-        <p><small>Manage movies, theaters, showtimes, and view reservation data</small></p>
-        <img src="docs/gifs/admin.gif" alt="CineTicket Admin Dashboard" width="400">
-      </td>
-      <td align="center" width="50%">
-        <h4>🧑‍💻 User Experience</h4>
-        <p><small>Browse movies, read reviews, select seats, and complete the reservation process</small></p>
-        <img src="docs/gifs/user.gif" alt="CineTicket User Experience" width="400">
-      </td>
-    </tr>
-  </table>
-</div>
+| ![Admin Dashboard](docs/gifs/admin.gif) | ![User Experience](docs/gifs/user.gif) |
+|:---:|:---:|
+| **👨‍💼 Admin Dashboard** | **🧑‍💻 User Experience** |
+| *Manage movies, theaters, showtimes, and view reservation data* | *Browse movies, read reviews, select seats, and complete the reservation process* |
 
 ## ✨ Key Features
 
-<div align="center">
-  <table>
-    <tr>
-      <td align="center" width="33%">
-        <h3>🎬 Movie Platform</h3>
-        <ul align="left">
-          <li>Browse & search movies</li>
-          <li>Rate & review movies</li>
-          <li>Manage user reviews</li>
-          <li>Movie recommendations</li>
-        </ul>
-      </td>
-      <td align="center" width="33%">
-        <h3>🎟️ Reservation System</h3>
-        <ul align="left">
-          <li>Theater management</li>
-          <li>Showtime scheduling</li>
-          <li>Seat selection & booking</li>
-          <li>Stripe payment integration</li>
-          <li>PDF receipt generation</li>
-          <li>Email notifications</li>
-        </ul>
-      </td>
-      <td align="center" width="33%">
-        <h3>🔒 Enterprise Security</h3>
-        <ul align="left">
-          <li>JWT authentication</li>
-          <li>Role-based access control</li>
-          <li>Rate limiting protection</li>
-          <li>Secure transactions</li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td align="center" colspan="3">
-        <h3>🌟 Advanced Features</h3>
-        <table>
-          <tr>
-            <td width="33%">
-              <h4>💳 Payment Processing</h4>
-              <ul align="left">
-                <li>Stripe integration</li>
-                <li>Checkout sessions</li>
-                <li>Webhook handling</li>
-                <li>Receipt generation</li>
-              </ul>
-            </td>
-            <td width="33%">
-              <h4>📧 Email Notifications</h4>
-              <ul align="left">
-                <li>Confirmation emails</li>
-                <li>PDF attachments</li>
-                <li>Branded templates</li>
-              </ul>
-            </td>
-            <td width="33%">
-              <h4>🎫 Reservation Management</h4>
-              <ul align="left">
-                <li>Interactive seat selection</li>
-                <li>Status tracking</li>
-                <li>Concurrent booking protection</li>
-              </ul>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</div>
+| 🎬 **Movie Platform** | 🎟️ **Reservation System** | 🔒 **Enterprise Security** |
+|:---|:---|:---|
+| • Browse & search movies<br>• Rate & review movies<br>• Manage user reviews<br>• Movie recommendations | • Theater management<br>• Showtime scheduling<br>• Seat selection & booking<br>• Stripe payment integration<br>• PDF receipt generation<br>• Email notifications | • JWT authentication<br>• Role-based access control<br>• Rate limiting protection<br>• Secure transactions |
+### 🌟 Advanced Features
+
+| 💳 **Payment Processing** | 📧 **Email Notifications** | 🎫 **Reservation Management** |
+|:---|:---|:---|
+| • Stripe integration<br>• Checkout sessions<br>• Webhook handling<br>• Receipt generation | • Confirmation emails<br>• PDF attachments<br>• Branded templates | • Interactive seat selection<br>• Status tracking<br>• Concurrent booking protection |
 
 ## 🏗️ Architecture
 
@@ -141,63 +68,57 @@ The system is deployed and fully functional at [https://cineticket.onrender.com]
 
 ## 🔍 Installation
 
-<div align="center">
-  <table>
-    <tr>
-      <td width="30%" align="center">
-        <h3>Prerequisites</h3>
-        <ul align="left">
-          <li>Java 17 or higher</li>
-          <li>Maven 3.6+</li>
-          <li>MySQL 8.0+</li>
-        </ul>
-      </td>
-      <td width="70%" align="center">
-        <h3>Quick Start Guide</h3>
-        <ol align="left">
-          <li>
-            <strong>Clone the repository</strong>
-            <pre><code>git clone https://github.com/lakshay1341/Movie-Review-System-API.git
-cd Movie-Review-System-API</code></pre>
-          </li>
-          <li>
-            <strong>Configure the database</strong>
-            <pre><code>CREATE DATABASE moviereviewdbupdated;</code></pre>
-          </li>
-          <li>
-            <strong>Configure application properties</strong><br>
-            Update <code>src/main/resources/application.properties</code> with your database credentials, JWT configuration, and Stripe API keys.
-            <blockquote>
-              <p>⚠️ <strong>Security Note</strong>: Generate a secure JWT secret using <code>openssl rand -base64 64</code> and never commit it to version control.</p>
-            </blockquote>
-          </li>
-          <li>
-            <strong>Set up environment variables</strong><br>
-            Create a <code>.env</code> file based on the provided <code>.env.example</code> with your configuration.<br>
-            <pre><code># Copy the example file
+### Prerequisites
+
+- Java 17 or higher
+- Maven 3.6+
+- MySQL 8.0+
+
+### Quick Start Guide
+
+1. **Clone the repository**
+
+```bash
+git clone https://github.com/lakshay1341/Movie-Review-System-API.git
+cd Movie-Review-System-API
+```
+
+2. **Configure the database**
+
+```sql
+CREATE DATABASE moviereviewdbupdated;
+```
+
+3. **Configure application properties**
+
+Update `src/main/resources/application.properties` with your database credentials, JWT configuration, and Stripe API keys.
+
+> **⚠️ Security Note**: Generate a secure JWT secret using `openssl rand -base64 64` and never commit it to version control.
+
+4. **Set up environment variables**
+
+Create a `.env` file based on the provided `.env.example` with your configuration.
+
+```bash
+# Copy the example file
 cp .env.example .env
 
 # Edit the .env file with your actual values
 # For security, generate a new JWT secret:
-openssl rand -base64 64</code></pre>
-          </li>
-          <li>
-            <strong>Build and run the application</strong>
-            <pre><code>mvn clean install
-mvn spring-boot:run</code></pre>
-          </li>
-          <li>
-            <strong>Access the application</strong>
-            <ul>
-              <li>API: <a href="http://localhost:8080">http://localhost:8080</a></li>
-              <li>Swagger UI: <a href="http://localhost:8080/swagger-ui/index.html">http://localhost:8080/swagger-ui/index.html</a></li>
-            </ul>
-          </li>
-        </ol>
-      </td>
-    </tr>
-  </table>
-</div>
+openssl rand -base64 64
+```
+
+5. **Build and run the application**
+
+```bash
+mvn clean install
+mvn spring-boot:run
+```
+
+6. **Access the application**
+
+- API: [http://localhost:8080](http://localhost:8080)
+- Swagger UI: [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
 
 ### Default Credentials
 
@@ -210,49 +131,27 @@ The system automatically creates two users on startup:
 
 ## 🔥 API Reference
 
-<div align="center">
-  <table>
-    <tr>
-      <td align="center" colspan="3">
-        <a href="https://me3333-6732.postman.co/workspace/4f28700f-ee89-485e-a928-767cd44234f9">
-          <img src="https://img.shields.io/badge/Postman-View%20Complete%20Collection-4a4e69?style=for-the-badge&logo=postman&logoColor=white" alt="View Complete Collection">
-        </a>
-      </td>
-    </tr>
-    <tr>
-      <td align="center" colspan="3">
-        <h3>API Categories</h3>
-      </td>
-    </tr>
-    <tr>
-      <td align="center">
-        <a href="#-authentication"><img src="https://img.shields.io/badge/🔑_Authentication-2_Endpoints-4a4e69?style=flat-square" alt="Authentication: 2 Endpoints"></a>
-      </td>
-      <td align="center">
-        <a href="#-movies"><img src="https://img.shields.io/badge/🎬_Movies-6_Endpoints-4a4e69?style=flat-square" alt="Movies: 6 Endpoints"></a>
-      </td>
-      <td align="center">
-        <a href="#-reviews"><img src="https://img.shields.io/badge/⭐_Reviews-4_Endpoints-4a4e69?style=flat-square" alt="Reviews: 4 Endpoints"></a>
-      </td>
-    </tr>
-    <tr>
-      <td align="center">
-        <a href="#-theaters"><img src="https://img.shields.io/badge/🏛️_Theaters-6_Endpoints-4a4e69?style=flat-square" alt="Theaters: 6 Endpoints"></a>
-      </td>
-      <td align="center">
-        <a href="#-showtimes"><img src="https://img.shields.io/badge/📅_Showtimes-7_Endpoints-4a4e69?style=flat-square" alt="Showtimes: 7 Endpoints"></a>
-      </td>
-      <td align="center">
-        <a href="#-seats"><img src="https://img.shields.io/badge/💺_Seats-2_Endpoints-4a4e69?style=flat-square" alt="Seats: 2 Endpoints"></a>
-      </td>
-    </tr>
-    <tr>
-      <td align="center" colspan="3">
-        <a href="#-reservations"><img src="https://img.shields.io/badge/🎟️_Reservations-6_Endpoints-4a4e69?style=flat-square" alt="Reservations: 6 Endpoints"></a>
-      </td>
-    </tr>
-  </table>
-</div>
+<p align="center">
+  <a href="https://me3333-6732.postman.co/workspace/4f28700f-ee89-485e-a928-767cd44234f9">
+    <img src="https://img.shields.io/badge/Postman-View%20Complete%20Collection-4a4e69?style=for-the-badge&logo=postman&logoColor=white" alt="View Complete Collection">
+  </a>
+</p>
+
+### API Categories
+
+<p align="center">
+  <a href="#-authentication"><img src="https://img.shields.io/badge/🔑_Authentication-2_Endpoints-4a4e69?style=flat-square" alt="Authentication: 2 Endpoints"></a>
+  <a href="#-movies"><img src="https://img.shields.io/badge/🎬_Movies-6_Endpoints-4a4e69?style=flat-square" alt="Movies: 6 Endpoints"></a>
+  <a href="#-reviews"><img src="https://img.shields.io/badge/⭐_Reviews-4_Endpoints-4a4e69?style=flat-square" alt="Reviews: 4 Endpoints"></a>
+</p>
+<p align="center">
+  <a href="#-theaters"><img src="https://img.shields.io/badge/🏛️_Theaters-6_Endpoints-4a4e69?style=flat-square" alt="Theaters: 6 Endpoints"></a>
+  <a href="#-showtimes"><img src="https://img.shields.io/badge/📅_Showtimes-7_Endpoints-4a4e69?style=flat-square" alt="Showtimes: 7 Endpoints"></a>
+  <a href="#-seats"><img src="https://img.shields.io/badge/💺_Seats-2_Endpoints-4a4e69?style=flat-square" alt="Seats: 2 Endpoints"></a>
+</p>
+<p align="center">
+  <a href="#-reservations"><img src="https://img.shields.io/badge/🎟️_Reservations-6_Endpoints-4a4e69?style=flat-square" alt="Reservations: 6 Endpoints"></a>
+</p>
 
 ### 🔑 Authentication
 
@@ -559,64 +458,17 @@ The system automatically creates two users on startup:
 
 ## 🔒 Security
 
-<div align="center">
-  <table>
-    <tr>
-      <td align="center" width="50%">
-        <h4>Security Features</h4>
-        <ul align="left">
-          <li><strong>JWT Authentication</strong>: Secure token-based authentication</li>
-          <li><strong>Password Encryption</strong>: BCrypt encoding (strength 12)</li>
-          <li><strong>Role-Based Access Control</strong>: User/admin permissions</li>
-          <li><strong>Rate Limiting</strong>: 100 requests per minute</li>
-          <li><strong>Concurrent Access Control</strong>: Pessimistic locking</li>
-          <li><strong>Transactional Operations</strong>: Data integrity</li>
-          <li><strong>Secure Payments</strong>: Stripe integration</li>
-          <li><strong>Environment Variables</strong>: Secure credential management</li>
-        </ul>
-      </td>
-      <td align="center" width="50%">
-        <h4>Authentication Flow</h4>
-        <ol align="left">
-          <li>User registers or logs in with credentials</li>
-          <li>Server validates credentials and returns a JWT token</li>
-          <li>Client includes JWT in Authorization header</li>
-          <li>Server validates token and grants access based on roles</li>
-        </ol>
-        <p><strong>Example Header:</strong></p>
-        <pre><code>Authorization: Bearer eyJhbGciOiJIUzUxMiJ9...</code></pre>
-      </td>
-    </tr>
-  </table>
-</div>
+| **Security Features** | **Authentication Flow** |
+|:---|:---|
+| • **JWT Authentication**: Secure token-based authentication<br>• **Password Encryption**: BCrypt encoding (strength 12)<br>• **Role-Based Access Control**: User/admin permissions<br>• **Rate Limiting**: 100 requests per minute<br>• **Concurrent Access Control**: Pessimistic locking<br>• **Transactional Operations**: Data integrity<br>• **Secure Payments**: Stripe integration<br>• **Environment Variables**: Secure credential management | 1. User registers or logs in with credentials<br>2. Server validates credentials and returns a JWT token<br>3. Client includes JWT in Authorization header<br>4. Server validates token and grants access based on roles<br><br>**Example Header:**<br>`Authorization: Bearer eyJhbGciOiJIUzUxMiJ9...` |
 
 ## 📖 Documentation
 
 ### API Documentation
 
-<div align="center">
-  <table>
-    <tr>
-      <td align="center" width="50%">
-        <h4>Swagger UI</h4>
-        <p>Interactive API documentation with request/response examples</p>
-        <ul align="left">
-          <li><a href="http://localhost:8080/swagger-ui/index.html">Local Development</a></li>
-          <li><a href="https://cineticket.onrender.com/swagger-ui/index.html">Production</a></li>
-          <li><a href="https://cineticket.onrender.com/api-docs">OpenAPI Specification</a></li>
-        </ul>
-      </td>
-      <td align="center" width="50%">
-        <h4>Postman Collection</h4>
-        <p>Complete API testing suite with environments</p>
-        <a href="https://me3333-6732.postman.co/workspace/4f28700f-ee89-485e-a928-767cd44234f9">
-          <img src="https://img.shields.io/badge/Postman-Run%20in%20Postman-4a4e69?style=for-the-badge&logo=postman&logoColor=white" alt="Run in Postman">
-        </a>
-        <p><small>Also available in <code>docs/postman</code> directory</small></p>
-      </td>
-    </tr>
-  </table>
-</div>
+| **Swagger UI** | **Postman Collection** |
+|:---|:---|
+| Interactive API documentation with request/response examples<br><br>• [Local Development](http://localhost:8080/swagger-ui/index.html)<br>• [Production](https://cineticket.onrender.com/swagger-ui/index.html)<br>• [OpenAPI Specification](https://cineticket.onrender.com/api-docs) | Complete API testing suite with environments<br><br>[![Run in Postman](https://img.shields.io/badge/Postman-Run%20in%20Postman-4a4e69?style=for-the-badge&logo=postman&logoColor=white)](https://me3333-6732.postman.co/workspace/4f28700f-ee89-485e-a928-767cd44234f9)<br><br>*Also available in `docs/postman` directory* |
 
 ### Response Format
 
@@ -626,9 +478,7 @@ All API responses follow a consistent format:
 {
   "success": true,
   "message": "operation.success.message",
-  "data": {
-    // Response data here
-  }
+  "data": {"Response data here"}
 }
 ```
 
